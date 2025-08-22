@@ -67,8 +67,11 @@ class StealthAddressController {
                     const ipAddress = req.ip || req.socket.remoteAddress;
                     finalDeviceId = this.paymentSessionService.generateDeviceId(userAgent, ipAddress);
                 }
-                // First, check for active payment session (if reuseSession is true)
-                if (reuseSession) {
+                // Always enable session reuse by default for better user experience
+                // This ensures consistent stealth addresses for the same device without requiring client configuration
+                const shouldReuseSession = reuseSession !== false; // Default to true unless explicitly set to false
+                // First, check for active payment session (if reuseSession is enabled)
+                if (shouldReuseSession) {
                     try {
                         existingPaymentSession = await this.paymentSessionService.getActivePaymentSessionForDevice(finalDeviceId, user.id);
                         if (existingPaymentSession) {
