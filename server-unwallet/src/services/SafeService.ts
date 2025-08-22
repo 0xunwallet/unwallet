@@ -82,7 +82,8 @@ export class SafeService {
       Logger.info('Predicting Safe address using Protocol Kit', {
         stealthAddress,
         chainId: this.chainId,
-        saltNonce
+        saltNonce,
+        ...(this.chainId === CHAIN_IDS.SEI_TESTNET ? { contractNetworks: this.getContractNetworks() } : {})
       });
 
       // Create predicted Safe configuration using Protocol Kit standards

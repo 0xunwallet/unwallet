@@ -13,6 +13,18 @@ export class Logger {
   }
 
   static error(message: string, meta?: any): void {
+    if (meta && meta.error instanceof Error) {
+      const err = meta.error as Error & { cause?: unknown };
+      meta = {
+        ...meta,
+        error: {
+          name: err.name,
+          message: err.message,
+          stack: err.stack,
+          ...(err.cause ? { cause: String(err.cause) } : {})
+        }
+      };
+    }
     console.error(this.formatMessage(LogLevel.ERROR, message, meta));
   }
 
