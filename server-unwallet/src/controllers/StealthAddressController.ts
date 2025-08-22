@@ -234,9 +234,16 @@ export class StealthAddressController {
               stealthAddress: existingPaymentSession.stealthAddress
             });
 
+            // Get the stealth address record to check for Safe address
+            const stealthAddressRecord = await this.supabaseService.getStealthAddressByPaymentAddress(existingPaymentSession.stealthAddress);
+            
+            // Determine which address to return as the primary address
+            // Prefer Safe address if available, otherwise use stealth address
+            const primaryAddress = stealthAddressRecord?.safeAddress || existingPaymentSession.stealthAddress;
+            
             // Return existing session info
             const eventListenerInfo: EventListenerInfo = {
-              listenerId: `${existingPaymentSession.paymentId}_${existingPaymentSession.stealthAddress.toLowerCase()}`,
+              listenerId: `${existingPaymentSession.paymentId}_${primaryAddress.toLowerCase()}`,
               isActive: true,
               startTime: existingPaymentSession.createdAt!,
               timeRemaining: Math.max(0, Math.floor((new Date(existingPaymentSession.expiresAt).getTime() - Date.now()) / 1000)),
@@ -244,12 +251,18 @@ export class StealthAddressController {
             };
 
             const response: SingleStealthAddressResponse = {
-              address: existingPaymentSession.stealthAddress,
+              address: primaryAddress,
               chainId: existingPaymentSession.chainId,
               chainName,
               tokenAddress: existingPaymentSession.tokenAddress,
               tokenAmount: existingPaymentSession.tokenAmount,
               paymentId: existingPaymentSession.paymentId,
+              ...(stealthAddressRecord?.safeAddress && { 
+                safeAddress: {
+                  address: stealthAddressRecord.safeAddress,
+                  isDeployed: stealthAddressRecord.safeDeployed
+                }
+              }),
               eventListener: eventListenerInfo
             };
 
@@ -349,8 +362,12 @@ export class StealthAddressController {
                 });
               }
 
+              // Determine which address to return as the primary address
+              // Prefer Safe address if available, otherwise use stealth address
+              const primaryAddress = stealthAddressRecord.safeAddress || existingStealthAddress.stealthAddress;
+              
               const response: SingleStealthAddressResponse = {
-                address: existingStealthAddress.stealthAddress,
+                address: primaryAddress,
                 chainId: selectedChainId,
                 chainName,
                 tokenAddress,
