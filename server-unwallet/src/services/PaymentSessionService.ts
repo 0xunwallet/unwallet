@@ -326,10 +326,11 @@ export class PaymentSessionService {
         actualAmount
       });
 
+      // Fetch the payment session to get the stealth address and device info
+      const paymentSession = await this.getPaymentSession(paymentId);
+
       // After marking payment as completed, update stealth address funding status
       try {
-        // Fetch the payment session to get the stealth address
-        const paymentSession = await this.getPaymentSession(paymentId);
         if (paymentSession && paymentSession.stealthAddress) {
           // Find the stealth address record by stealthAddress
           const stealthAddressRecord = await this.supabaseService.getStealthAddressByPaymentAddress(paymentSession.stealthAddress);
@@ -356,6 +357,35 @@ export class PaymentSessionService {
         }
       } catch (err) {
         Logger.error('Failed to update stealth address funded status after payment completion', { error: err, paymentId });
+        // Do not throw, just log
+      }
+
+      // Update device session after payment completion
+      try {
+        if (paymentSession && paymentSession.deviceId) {
+          // Find the device session that was using this payment
+          const deviceSession = await this.getDeviceSession(paymentSession.deviceId, paymentSession.userId);
+          if (deviceSession && deviceSession.lastActivePaymentId === paymentId) {
+            // Clear the lastActivePaymentId since this payment is now completed
+            // Keep the lastUsedStealthAddress for potential reuse
+            await this.supabaseService.getClient()
+              .from('device_sessions')
+              .update({
+                lastActivePaymentId: null,
+                updatedAt: new Date().toISOString()
+              })
+              .eq('id', deviceSession.id);
+
+            Logger.info('Device session updated after payment completion', {
+              deviceId: paymentSession.deviceId,
+              userId: paymentSession.userId,
+              paymentId,
+              stealthAddress: paymentSession.stealthAddress
+            });
+          }
+        }
+      } catch (err) {
+        Logger.error('Failed to update device session after payment completion', { error: err, paymentId });
         // Do not throw, just log
       }
     } catch (error) {
