@@ -1,0 +1,26 @@
+{
+  "name": "my-paid-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@coinbase/x402": "^0.5.1",
+    "@sei-js/x402": "^0.4.1",
+    "@sei-js/x402-axios": "^0.3.5",
+    "@sei-js/x402-express": "^0.3.6",
+    "axios": "^1.11.0",
+    "dotenv": "^17.2.1",
+    "ethers": "^6.15.0",
+    "viem": "^2.34.0",
+    "x402-axios": "^0.5.1",
+    "x402-express": "^0.5.3"
+  }
+}
