@@ -15,6 +15,18 @@ class Logger {
         return `[${timestamp}] [${level.toUpperCase()}] ${message}${metaString}`;
     }
     static error(message, meta) {
+        if (meta && meta.error instanceof Error) {
+            const err = meta.error;
+            meta = {
+                ...meta,
+                error: {
+                    name: err.name,
+                    message: err.message,
+                    stack: err.stack,
+                    ...(err.cause ? { cause: String(err.cause) } : {})
+                }
+            };
+        }
         console.error(this.formatMessage(LogLevel.ERROR, message, meta));
     }
     static warn(message, meta) {

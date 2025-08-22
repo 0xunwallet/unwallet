@@ -14,6 +14,7 @@ export declare class SafeService {
     private readonly chainId;
     private readonly rpcUrl;
     constructor(chainId?: number, rpcUrl?: string);
+    private getContractNetworks;
     private createSafeConfig;
     private predictSafeAddressUsingProtocolKit;
     predictSafeAddressOnTheBasisOfStealthAddress(stealthAddresses: string[]): Promise<SafeAddressResult[]>;

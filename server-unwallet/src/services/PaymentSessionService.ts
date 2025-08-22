@@ -18,11 +18,24 @@ export class PaymentSessionService {
     return `pay_${timestamp}_${random}`;
   }
 
-  // Generate a device fingerprint-based ID (can be enhanced with actual device fingerprinting)
+  // Generate a device fingerprint-based ID using user agent and IP address
   generateDeviceId(userAgent?: string, ipAddress?: string): string {
-    const timestamp = Date.now().toString(36);
-    const random = Math.random().toString(36).substr(2, 8);
-    return `dev_${timestamp}_${random}`;
+    // Create a hash of user agent and IP address for consistent device identification
+    const deviceFingerprint = `${userAgent || 'unknown'}_${ipAddress || 'unknown'}`;
+    
+    // Simple hash function for device fingerprinting
+    let hash = 0;
+    for (let i = 0; i < deviceFingerprint.length; i++) {
+      const char = deviceFingerprint.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    
+    // Use absolute value and convert to base36 for shorter string
+    // Remove timestamp to ensure same device always gets same ID
+    const hashStr = Math.abs(hash).toString(36);
+    
+    return `dev_${hashStr}`;
   }
 
   // Create a new payment session
@@ -256,6 +269,38 @@ export class PaymentSessionService {
       return null;
     } catch (error) {
       Logger.error('Error getting active payment session for device', { error, deviceId, userId });
+      return null; // Don't throw, just return null to create new session
+    }
+  }
+
+  // Get last used stealth address for device (for consistent address return)
+  async getLastUsedStealthAddressForDevice(deviceId: string, userId: string): Promise<{ stealthAddress: string; nonce: number } | null> {
+    try {
+      const deviceSession = await this.getDeviceSession(deviceId, userId);
+      if (!deviceSession || !deviceSession.lastUsedStealthAddress) {
+        return null;
+      }
+
+      // Get the stealth address record to get the nonce
+      const stealthAddressRecord = await this.supabaseService.getStealthAddressByPaymentAddress(deviceSession.lastUsedStealthAddress);
+      
+      if (stealthAddressRecord) {
+        Logger.info('Found last used stealth address for device', {
+          deviceId,
+          userId,
+          stealthAddress: deviceSession.lastUsedStealthAddress,
+          nonce: stealthAddressRecord.nonce
+        });
+
+        return {
+          stealthAddress: deviceSession.lastUsedStealthAddress,
+          nonce: stealthAddressRecord.nonce
+        };
+      }
+
+      return null;
+    } catch (error) {
+      Logger.error('Error getting last used stealth address for device', { error, deviceId, userId });
       return null; // Don't throw, just return null to create new session
     }
   }

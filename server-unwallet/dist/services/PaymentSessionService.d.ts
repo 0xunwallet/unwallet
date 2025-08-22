@@ -10,6 +10,10 @@ export declare class PaymentSessionService {
     createOrUpdateDeviceSession(sessionData: Omit<DeviceSession, 'id' | 'createdAt' | 'updatedAt'>): Promise<DeviceSession>;
     getDeviceSession(deviceId: string, userId: string): Promise<DeviceSession | null>;
     getActivePaymentSessionForDevice(deviceId: string, userId: string): Promise<PaymentSession | null>;
+    getLastUsedStealthAddressForDevice(deviceId: string, userId: string): Promise<{
+        stealthAddress: string;
+        nonce: number;
+    } | null>;
     completePaymentSession(paymentId: string, transactionHash: string, fromAddress: string, actualAmount: string): Promise<void>;
     expirePaymentSession(paymentId: string): Promise<PaymentSession>;
     getUserPaymentSessions(userId: string, limit?: number): Promise<PaymentSession[]>;

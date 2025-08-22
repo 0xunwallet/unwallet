@@ -8,6 +8,7 @@ const protocol_kit_1 = __importDefault(require("@safe-global/protocol-kit"));
 const utils_1 = require("../utils");
 const viem_1 = require("viem");
 const chains_1 = require("../config/chains");
+const safeContracts_1 = require("../config/safeContracts");
 // ERC20 Balance ABI
 const ERC20_BALANCE_ABI = [
     {
@@ -30,6 +31,30 @@ class SafeService {
         this.chainId = chainId;
         this.rpcUrl = rpcUrl;
     }
+    // Build Protocol Kit contractNetworks config when custom contracts are available
+    getContractNetworks() {
+        // Only override for Sei Testnet (1328). For other chains, let SDK defaults apply.
+        if (this.chainId !== chains_1.CHAIN_IDS.SEI_TESTNET)
+            return undefined;
+        const contracts = safeContracts_1.SAFE_CONTRACTS_MAP[this.chainId];
+        if (!contracts)
+            return undefined;
+        return {
+            [this.chainId]: {
+                safeProxyFactoryAddress: contracts.safeProxyFactoryAddress,
+                // SDK expects these keys for singletons
+                safeSingletonAddress: contracts.safeSingletonAddress,
+                safeSingletonL2Address: contracts.safeSingletonL2Address,
+                multiSendAddress: contracts.multiSendAddress,
+                multiSendCallOnlyAddress: contracts.multiSendCallOnlyAddress,
+                fallbackHandlerAddress: contracts.fallbackHandlerAddress,
+                tokenCallbackHandlerAddress: contracts.tokenCallbackHandlerAddress,
+                signMessageLibAddress: contracts.signMessageLibAddress,
+                createCallAddress: contracts.createCallAddress,
+                simulateTxAccessorAddress: contracts.simulateTxAccessorAddress
+            }
+        };
+    }
     // Create Safe configuration for address prediction
     createSafeConfig(owners, threshold = 1, saltNonce = '0') {
         return {
@@ -44,7 +69,8 @@ class SafeService {
             utils_1.Logger.info('Predicting Safe address using Protocol Kit', {
                 stealthAddress,
                 chainId: this.chainId,
-                saltNonce
+                saltNonce,
+                ...(this.chainId === chains_1.CHAIN_IDS.SEI_TESTNET ? { contractNetworks: this.getContractNetworks() } : {})
             });
             // Create predicted Safe configuration using Protocol Kit standards
             const predictedSafe = {
@@ -60,6 +86,7 @@ class SafeService {
             const protocolKit = await protocol_kit_1.default.init({
                 provider: this.rpcUrl,
                 predictedSafe,
+                contractNetworks: this.getContractNetworks()
             });
             const predictedAddress = await protocolKit.getAddress();
             utils_1.Logger.info('Safe address predicted successfully using Protocol Kit', {
@@ -139,7 +166,8 @@ class SafeService {
             // Initialize Safe Protocol Kit with the address - it handles all contract interactions
             const protocolKit = await protocol_kit_1.default.init({
                 provider: this.rpcUrl,
-                safeAddress
+                safeAddress,
+                contractNetworks: this.getContractNetworks()
             });
             // Use Protocol Kit's built-in deployment check
             const isDeployed = await protocolKit.isSafeDeployed();
@@ -169,7 +197,8 @@ class SafeService {
             // Initialize Safe Protocol Kit - handles all contract addresses automatically
             const protocolKit = await protocol_kit_1.default.init({
                 provider: this.rpcUrl,
-                safeAddress
+                safeAddress,
+                contractNetworks: this.getContractNetworks()
             });
             // Check if Safe is deployed
             const isDeployed = await protocolKit.isSafeDeployed();
@@ -258,7 +287,8 @@ class SafeService {
             // Safe Protocol Kit handles all the complexity of contract interactions
             const protocolKit = await protocol_kit_1.default.init({
                 provider: this.rpcUrl,
-                safeAddress
+                safeAddress,
+                contractNetworks: this.getContractNetworks()
             });
             utils_1.Logger.info('Safe Protocol Kit instance created successfully', {
                 safeAddress,
@@ -298,6 +328,7 @@ class SafeService {
             const protocolKit = await protocol_kit_1.default.init({
                 provider: this.rpcUrl,
                 predictedSafe,
+                contractNetworks: this.getContractNetworks()
             });
             const predictedAddress = await protocolKit.getAddress();
             utils_1.Logger.info('Safe deployment configuration prepared successfully', {

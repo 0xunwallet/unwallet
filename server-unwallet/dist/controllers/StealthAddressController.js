@@ -60,13 +60,21 @@ class StealthAddressController {
                 let finalDeviceId = deviceId;
                 let existingPaymentSession = null;
                 let isReusedSession = false;
-                if (deviceId && reuseSession) {
+                let existingStealthAddress = null;
+                // Generate device ID if not provided
+                if (!finalDeviceId) {
+                    const userAgent = req.headers['user-agent'];
+                    const ipAddress = req.ip || req.socket.remoteAddress;
+                    finalDeviceId = this.paymentSessionService.generateDeviceId(userAgent, ipAddress);
+                }
+                // First, check for active payment session (if reuseSession is true)
+                if (reuseSession) {
                     try {
-                        existingPaymentSession = await this.paymentSessionService.getActivePaymentSessionForDevice(deviceId, user.id);
+                        existingPaymentSession = await this.paymentSessionService.getActivePaymentSessionForDevice(finalDeviceId, user.id);
                         if (existingPaymentSession) {
                             isReusedSession = true;
                             utils_1.Logger.info('Reusing existing payment session for device', {
-                                deviceId,
+                                deviceId: finalDeviceId,
                                 userId: user.id,
                                 paymentId: existingPaymentSession.paymentId,
                                 stealthAddress: existingPaymentSession.stealthAddress
@@ -93,14 +101,119 @@ class StealthAddressController {
                         }
                     }
                     catch (error) {
-                        utils_1.Logger.warn('Failed to get existing payment session, creating new one', { error, deviceId });
+                        utils_1.Logger.warn('Failed to get existing payment session, checking for last used stealth address', { error, deviceId: finalDeviceId });
                     }
                 }
-                // Generate device ID if not provided
-                if (!finalDeviceId) {
-                    const userAgent = req.headers['user-agent'];
-                    const ipAddress = req.ip || req.socket.remoteAddress;
-                    finalDeviceId = this.paymentSessionService.generateDeviceId(userAgent, ipAddress);
+                // If no active session, check for last used stealth address for this device
+                try {
+                    existingStealthAddress = await this.paymentSessionService.getLastUsedStealthAddressForDevice(finalDeviceId, user.id);
+                    if (existingStealthAddress) {
+                        utils_1.Logger.info('Found existing stealth address for device, reusing it', {
+                            deviceId: finalDeviceId,
+                            userId: user.id,
+                            stealthAddress: existingStealthAddress.stealthAddress,
+                            nonce: existingStealthAddress.nonce
+                        });
+                        // Get the stealth address record to get additional info
+                        const stealthAddressRecord = await this.supabaseService.getStealthAddressByPaymentAddress(existingStealthAddress.stealthAddress);
+                        if (stealthAddressRecord) {
+                            // Create a new payment session for the existing stealth address
+                            const paymentId = this.paymentSessionService.generatePaymentId();
+                            const expiresAt = new Date(Date.now() + 3 * 60 * 1000); // 3 minutes from now
+                            try {
+                                const paymentSession = await this.paymentSessionService.createPaymentSession({
+                                    paymentId,
+                                    userId: user.id,
+                                    deviceId: finalDeviceId,
+                                    stealthAddress: existingStealthAddress.stealthAddress,
+                                    tokenAddress,
+                                    chainId: selectedChainId,
+                                    tokenAmount: tokenAmount.toString(),
+                                    status: 'pending',
+                                    isActive: true,
+                                    expiresAt: expiresAt.toISOString()
+                                });
+                                // Update device session
+                                await this.paymentSessionService.createOrUpdateDeviceSession({
+                                    deviceId: finalDeviceId,
+                                    userId: user.id,
+                                    lastActivePaymentId: paymentId,
+                                    lastUsedStealthAddress: existingStealthAddress.stealthAddress,
+                                    userAgent: req.headers['user-agent'] || 'Unknown',
+                                    ipAddress: req.ip || req.socket.remoteAddress || '',
+                                    isActive: true,
+                                    lastAccessedAt: new Date().toISOString()
+                                });
+                                // Start event listener for payment detection
+                                let eventListenerInfo = undefined;
+                                try {
+                                    const monitoringAddress = stealthAddressRecord.safeAddress || existingStealthAddress.stealthAddress;
+                                    const listenerId = await this.eventListenerService.startListening({
+                                        paymentId,
+                                        paymentAddress: monitoringAddress,
+                                        tokenAddress,
+                                        chainId: selectedChainId,
+                                        userId: user.id,
+                                        deviceId: finalDeviceId,
+                                        expectedAmount: tokenAmount.toString(),
+                                        timeoutMinutes: 3
+                                    });
+                                    // Update payment session status to listening
+                                    await this.paymentSessionService.updatePaymentSession(paymentId, {
+                                        status: 'listening'
+                                    });
+                                    eventListenerInfo = {
+                                        listenerId,
+                                        isActive: true,
+                                        startTime: new Date().toISOString(),
+                                        timeRemaining: 3 * 60, // 3 minutes in seconds
+                                        timeoutMinutes: 3
+                                    };
+                                    utils_1.Logger.info('Event listener started for reused stealth address', {
+                                        paymentId,
+                                        listenerId,
+                                        monitoringAddress,
+                                        stealthAddress: existingStealthAddress.stealthAddress
+                                    });
+                                }
+                                catch (error) {
+                                    utils_1.Logger.error('Failed to start event listener for reused stealth address', {
+                                        error,
+                                        paymentId,
+                                        stealthAddress: existingStealthAddress.stealthAddress
+                                    });
+                                }
+                                const response = {
+                                    address: existingStealthAddress.stealthAddress,
+                                    chainId: selectedChainId,
+                                    chainName,
+                                    tokenAddress,
+                                    tokenAmount: tokenAmount.toString(),
+                                    paymentId,
+                                    ...(stealthAddressRecord.safeAddress && {
+                                        safeAddress: {
+                                            address: stealthAddressRecord.safeAddress,
+                                            isDeployed: stealthAddressRecord.safeDeployed
+                                        }
+                                    }),
+                                    ...(eventListenerInfo && { eventListener: eventListenerInfo })
+                                };
+                                utils_1.ResponseUtil.success(res, response, 'Reused existing stealth address for device');
+                                return;
+                            }
+                            catch (error) {
+                                utils_1.Logger.error('Failed to create payment session for reused stealth address', {
+                                    error,
+                                    deviceId: finalDeviceId,
+                                    stealthAddress: existingStealthAddress.stealthAddress
+                                });
+                                // Continue to generate new stealth address if session creation fails
+                            }
+                        }
+                    }
+                }
+                catch (error) {
+                    utils_1.Logger.warn('Failed to get last used stealth address, will generate new one', { error, deviceId: finalDeviceId });
                 }
                 utils_1.Logger.info('Generating single stealth address for user', {
                     userId: user.id,
@@ -167,8 +280,11 @@ class StealthAddressController {
                     });
                     // Don't fail the stealth address generation if Safe prediction fails
                 }
-                // Increment user's nonce by 1
-                const newNonce = await this.userService.incrementNonce(user.id);
+                // Only increment nonce if we're generating a new stealth address (not reusing existing one)
+                let newNonce = user.currentNonce;
+                if (!existingStealthAddress) {
+                    newNonce = await this.userService.incrementNonce(user.id);
+                }
                 // Create payment session
                 const expiresAt = new Date(Date.now() + 3 * 60 * 1000); // 3 minutes from now
                 try {
@@ -271,42 +387,51 @@ class StealthAddressController {
                     });
                     // Continue even if event listener fails to start
                 }
-                // Store the stealth address in the database
-                try {
-                    const stealthAddressData = {
-                        userId: user.id,
-                        nonce: user.currentNonce, // Use the nonce that was used for generation
-                        stealthAddress: singleAddress.address,
-                        safeDeployed: safeAddressInfo?.isDeployed || false,
-                        safeFunded: false, // Default to false for new addresses
-                        chainId: selectedChainId,
-                        chainName,
-                        tokenAddress,
-                        tokenAmount: tokenAmount.toString(),
-                        paymentId,
-                        deviceId: finalDeviceId,
-                        ...(safeAddressInfo?.address && { safeAddress: safeAddressInfo.address })
-                    };
-                    const stealthAddressRecord = await this.supabaseService.createStealthAddress(stealthAddressData);
-                    utils_1.Logger.info('Stealth address stored in database', {
-                        recordId: stealthAddressRecord.id,
-                        userId: user.id,
-                        stealthAddress: singleAddress.address,
-                        safeAddress: safeAddressInfo?.address,
-                        chainId: selectedChainId,
-                        nonce: user.currentNonce,
-                        paymentId,
-                        deviceId: finalDeviceId
-                    });
+                // Store the stealth address in the database (only for new addresses, not reused ones)
+                if (!existingStealthAddress) {
+                    try {
+                        const stealthAddressData = {
+                            userId: user.id,
+                            nonce: user.currentNonce, // Use the nonce that was used for generation
+                            stealthAddress: singleAddress.address,
+                            safeDeployed: safeAddressInfo?.isDeployed || false,
+                            safeFunded: false, // Default to false for new addresses
+                            chainId: selectedChainId,
+                            chainName,
+                            tokenAddress,
+                            tokenAmount: tokenAmount.toString(),
+                            paymentId,
+                            deviceId: finalDeviceId,
+                            ...(safeAddressInfo?.address && { safeAddress: safeAddressInfo.address })
+                        };
+                        const stealthAddressRecord = await this.supabaseService.createStealthAddress(stealthAddressData);
+                        utils_1.Logger.info('Stealth address stored in database', {
+                            recordId: stealthAddressRecord.id,
+                            userId: user.id,
+                            stealthAddress: singleAddress.address,
+                            safeAddress: safeAddressInfo?.address,
+                            chainId: selectedChainId,
+                            nonce: user.currentNonce,
+                            paymentId,
+                            deviceId: finalDeviceId
+                        });
+                    }
+                    catch (dbError) {
+                        utils_1.Logger.error('Failed to store stealth address in database', {
+                            error: dbError,
+                            userId: user.id,
+                            stealthAddress: singleAddress.address,
+                            paymentId
+                        });
+                        // Don't fail the stealth address generation if database storage fails
+                    }
                 }
-                catch (dbError) {
-                    utils_1.Logger.error('Failed to store stealth address in database', {
-                        error: dbError,
+                else {
+                    utils_1.Logger.info('Skipping database storage for reused stealth address', {
                         userId: user.id,
                         stealthAddress: singleAddress.address,
                         paymentId
                     });
-                    // Don't fail the stealth address generation if database storage fails
                 }
                 const response = {
                     address: singleAddress.address,
