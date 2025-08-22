@@ -24,7 +24,7 @@ async function getSafeAddress() {
       body: JSON.stringify({
         chainId: 1328,
         tokenAddress: "0x4fCF1784B31630811181f670Aea7A7bEF803eaED",
-        tokenAmount: "50"
+        tokenAmount: "1"
       })
     });
     
@@ -37,14 +37,10 @@ async function getSafeAddress() {
     
     // Try to get Safe address first, fallback to stealth address if Safe prediction failed
     const safeAddress = json.data?.safeAddress?.address;
-    const stealthAddress = json.data?.address;
     
     if (safeAddress && safeAddress !== "") {
       console.log('Using Safe address:', safeAddress);
       return safeAddress;
-    } else if (stealthAddress) {
-      console.log('Safe prediction failed, using stealth address:', stealthAddress);
-      return stealthAddress;
     } else {
       throw new Error('No valid address found in response');
     }
@@ -64,7 +60,7 @@ const dynamicPaymentMiddleware = async (req, res, next) => {
       paymentAddress,
       {
         "/weather": {
-          price: "$0.0001",
+          price: "$0.01",
           network: "sei-testnet",
           config: {
             description: "Weather data access",
@@ -115,5 +111,5 @@ app.listen(4021, () => {
   console.log(`Facilitator: ${facilitatorUrl}`);
   console.log(`Available endpoints:`);
   console.log(`  • GET /health (free)`);
-  console.log(`  • GET /weather (paid: $0.0001 USDC)`);
+  console.log(`  • GET /weather (paid: $0.01 USDC)`);
 });
