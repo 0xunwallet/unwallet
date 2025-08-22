@@ -326,16 +326,17 @@ class PaymentSessionService {
                     // Find the device session that was using this payment
                     const deviceSession = await this.getDeviceSession(paymentSession.deviceId, paymentSession.userId);
                     if (deviceSession && deviceSession.lastActivePaymentId === paymentId) {
-                        // Clear the lastActivePaymentId since this payment is now completed
-                        // Keep the lastUsedStealthAddress for potential reuse
+                        // Clear the lastActivePaymentId and lastUsedStealthAddress since this payment is now completed
+                        // This ensures the device gets a new stealth address for the next payment
                         await this.supabaseService.getClient()
                             .from('device_sessions')
                             .update({
                             lastActivePaymentId: null,
+                            lastUsedStealthAddress: null, // Clear to force new address generation
                             updatedAt: new Date().toISOString()
                         })
                             .eq('id', deviceSession.id);
-                        utils_1.Logger.info('Device session updated after payment completion', {
+                        utils_1.Logger.info('Device session updated after payment completion - new address will be generated for next payment', {
                             deviceId: paymentSession.deviceId,
                             userId: paymentSession.userId,
                             paymentId,
