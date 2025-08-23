@@ -471,12 +471,22 @@ const processUTXORedemptionWithSponsorship = async (targetAmount = 0.0003) => {
         console.log(`   - Safe not deployed yet, will create deployment transaction`);
         isSafeDeployed = false;
       }
+
+      if(isSafeDeployed) {
+        safeNonce = await publicClient.readContract(
+          {
+            address: predictedSafeAddress,
+            abi: SAFE_ABI,
+            functionName: "nonce",
+          }
+        );
+        console.log(`   - Safe nonce: ${safeNonce}`);
+      }
       
       if (!isSafeDeployed) {
         try {
           deploymentTransaction = await protocolKit.createSafeDeploymentTransaction();
           console.log(`   - ✅ Safe deployment transaction created`);
-          safeNonce = await protocolKit.getNonce();
         } catch (error) {
           console.error(`   - ❌ Failed to create Safe deployment transaction:`, error);
           throw error;
@@ -520,7 +530,7 @@ const processUTXORedemptionWithSponsorship = async (targetAmount = 0.0003) => {
         data: transferData,
         operation: 0,
         safeTxGas: "0",
-        nonce: safeNonce + 1, // always add safe nonce + 1 to the nonce
+        nonce: safeNonce,
       });
 
       // Sign the Safe transaction

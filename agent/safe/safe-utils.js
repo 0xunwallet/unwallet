@@ -96,11 +96,6 @@ export async function predictSafeAddress(
     // Get custom contract networks configuration for Sei Testnet
     const contractNetworks = getContractNetworks(seiTestnet.id);
 
-    console.log(
-      "🔧 Using custom contract networks for Sei Testnet:",
-      contractNetworks
-    );
-
     // Safe Protocol Kit with custom contract addresses for Sei Testnet
     const protocolKit = await Safe.init({
       provider: rpcUrl,
@@ -135,6 +130,13 @@ export const SAFE_ABI = [
     name: "execTransaction",
     outputs: [{ name: "success", type: "bool" }],
     stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "nonce",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
     type: "function",
   },
 ];
