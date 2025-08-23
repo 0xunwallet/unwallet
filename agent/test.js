@@ -155,14 +155,18 @@ async function seiTestnetClient() {
         `📦 X-PAYMENT header created (${paymentHeader.length} chars)`
       );
 
-      // Step 6: Request weather with payment
-      console.log("\n🚀 STEP 5: Requesting weather with x402 payment...");
-      const weatherResponse = await fetch(`${WEATHER_API_URL}/weather`, {
+      const payload = {
         headers: {
           "X-PAYMENT": paymentHeader,
           "Content-Type": "application/json",
         },
-      });
+      }
+
+      console.log("payload", payload);
+      
+      // Step 6: Request weather with payment
+      console.log("\n🚀 STEP 5: Requesting weather with x402 payment...");
+      const weatherResponse = await fetch(`${WEATHER_API_URL}/weather`, payload);
 
       const weatherData = await weatherResponse.json();
       console.log(`📊 Response Status: ${weatherResponse.status}`);
