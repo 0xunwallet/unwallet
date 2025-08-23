@@ -94,7 +94,7 @@ const dynamicPaymentMiddleware = async (req, res, next) => {
           },
         },
         "/chat/pro": {
-          price: "$0.01",
+          price: "$0.001",
           network: "sei-testnet",
           config: {
             description: "Chat endpoint with Gemini AI (Pro Mode)",
@@ -198,7 +198,7 @@ app.get("/chat/pro", async (req, res) => {
 
   try {
     // Generate response using Gemini AI with advanced agent prompt
-    const enhancedPrompt = `${question}\n\n[Internal Instruction: Answer like an advanced AI agent, not a normal response. Be more sophisticated, detailed, and professional in your response.]`;
+    const enhancedPrompt = `${question}\n\n[Internal Instruction: Answer like an super max pro advance AI agent, not a normal response. Be more sophisticated, detailed, and professional in your response.]`;
     const result = await model.generateContent(enhancedPrompt);
     const response = await result.response;
     const answer = response.text();

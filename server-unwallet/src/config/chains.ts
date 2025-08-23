@@ -17,10 +17,10 @@ export const SEI_TESTNET = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ['https://sei-testnet.drpc.org'],
+      http: ['https://evm-rpc-testnet.sei-apis.com'],
     },
     public: {
-      http: ['https://sei-testnet.drpc.org'],
+      http: ['https://evm-rpc-testnet.sei-apis.com'],
     },
   },
   blockExplorers: {
@@ -47,7 +47,7 @@ export const CHAIN_NAMES: Record<number, string> = {
 
 // RPC URL mapping - Sei Testnet
 export const RPC_URLS: Record<number, string> = {
-  [CHAIN_IDS.SEI_TESTNET]: 'https://sei-testnet.drpc.org',
+  [CHAIN_IDS.SEI_TESTNET]: 'https://evm-rpc-testnet.sei-apis.com',
 };
 
 // Native currency mapping - Sei Testnet

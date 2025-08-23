@@ -974,9 +974,9 @@ class StealthAddressController {
     // Get RPC URL for a specific chain ID
     getRpcUrlForChain(chainId) {
         const rpcUrls = {
-            [chains_1.CHAIN_IDS.SEI_TESTNET]: 'https://sei-testnet.drpc.org', // Sei Testnet
+            [chains_1.CHAIN_IDS.SEI_TESTNET]: 'https://evm-rpc-testnet.sei-apis.com', // Sei Testnet
         };
-        return rpcUrls[chainId] || 'https://sei-testnet.drpc.org'; // Default to Sei Testnet
+        return rpcUrls[chainId] || 'https://evm-rpc-testnet.sei-apis.com'; // Default to Sei Testnet
     }
     // Setup event listeners for payment detection
     setupEventListeners() {

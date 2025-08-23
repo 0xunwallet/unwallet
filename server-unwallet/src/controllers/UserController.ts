@@ -21,10 +21,10 @@ export class UserController {
   // Get RPC URL for a specific chain ID
   private getRpcUrlForChain(chainId: number): string {
     const rpcUrls: Record<number, string> = {
-      [CHAIN_IDS.SEI_TESTNET]: 'https://sei-testnet.drpc.org', // Sei Testnet
+      [CHAIN_IDS.SEI_TESTNET]: 'https://evm-rpc-testnet.sei-apis.com', // Sei Testnet
     };
     
-    return rpcUrls[chainId] || 'https://sei-testnet.drpc.org'; // Default to Sei Testnet
+    return rpcUrls[chainId] || 'https://evm-rpc-testnet.sei-apis.com'; // Default to Sei Testnet
   }
 
   // Register new user

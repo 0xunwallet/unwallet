@@ -48,7 +48,7 @@ function initializeClients() {
     // Sei Testnet (primary)
     publicClients.set(chains_1.CHAIN_IDS.SEI_TESTNET, (0, viem_1.createPublicClient)({
         chain: chains_1.SEI_TESTNET,
-        transport: (0, viem_1.http)('https://sei-testnet.drpc.org'),
+        transport: (0, viem_1.http)('https://evm-rpc-testnet.sei-apis.com'),
     }));
     logger_1.Logger.info('TokenUtils initialized with blockchain clients', {
         supportedChains: Array.from(publicClients.keys())
@@ -188,7 +188,7 @@ function isNativeToken(tokenAddress) {
 function getRpcUrlForChain(chainId) {
     switch (chainId) {
         case chains_1.CHAIN_IDS.SEI_TESTNET:
-            return 'https://sei-testnet.drpc.org';
+            return 'https://evm-rpc-testnet.sei-apis.com';
         default:
             throw new Error(`Unsupported chain ID: ${chainId}`);
     }

@@ -18,10 +18,10 @@ exports.SEI_TESTNET = (0, viem_1.defineChain)({
     },
     rpcUrls: {
         default: {
-            http: ['https://sei-testnet.drpc.org'],
+            http: ['https://evm-rpc-testnet.sei-apis.com'],
         },
         public: {
-            http: ['https://sei-testnet.drpc.org'],
+            http: ['https://evm-rpc-testnet.sei-apis.com'],
         },
     },
     blockExplorers: {
@@ -44,7 +44,7 @@ exports.CHAIN_NAMES = {
 };
 // RPC URL mapping - Sei Testnet
 exports.RPC_URLS = {
-    [exports.CHAIN_IDS.SEI_TESTNET]: 'https://sei-testnet.drpc.org',
+    [exports.CHAIN_IDS.SEI_TESTNET]: 'https://evm-rpc-testnet.sei-apis.com',
 };
 // Native currency mapping - Sei Testnet
 exports.NATIVE_CURRENCIES = {

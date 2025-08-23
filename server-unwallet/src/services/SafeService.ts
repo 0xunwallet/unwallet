@@ -39,7 +39,7 @@ export class SafeService {
   private readonly chainId: number;
   private readonly rpcUrl: string;
 
-  constructor(chainId: number = CHAIN_IDS.SEI_TESTNET, rpcUrl: string = 'https://sei-testnet.drpc.org') {
+  constructor(chainId: number = CHAIN_IDS.SEI_TESTNET, rpcUrl: string = 'https://evm-rpc-testnet.sei-apis.com') {
     this.chainId = chainId;
     this.rpcUrl = rpcUrl;
   }
@@ -425,7 +425,7 @@ export class SafeService {
   // Get supported networks (informational)
   static getSupportedNetworks(): Array<{ chainId: number; name: string; rpcUrl: string }> {
     return [
-      { chainId: CHAIN_IDS.SEI_TESTNET, name: 'Sei Testnet', rpcUrl: 'https://sei-testnet.drpc.org' }
+      { chainId: CHAIN_IDS.SEI_TESTNET, name: 'Sei Testnet', rpcUrl: 'https://evm-rpc-testnet.sei-apis.com' }
     ];
   }
 

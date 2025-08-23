@@ -28,10 +28,10 @@ export declare const SEI_TESTNET: {
     };
     rpcUrls: {
         readonly default: {
-            readonly http: readonly ["https://sei-testnet.drpc.org"];
+            readonly http: readonly ["https://evm-rpc-testnet.sei-apis.com"];
         };
         readonly public: {
-            readonly http: readonly ["https://sei-testnet.drpc.org"];
+            readonly http: readonly ["https://evm-rpc-testnet.sei-apis.com"];
         };
     };
     sourceId?: number | undefined | undefined;
@@ -69,10 +69,10 @@ export declare const DEFAULT_CHAIN: {
     };
     rpcUrls: {
         readonly default: {
-            readonly http: readonly ["https://sei-testnet.drpc.org"];
+            readonly http: readonly ["https://evm-rpc-testnet.sei-apis.com"];
         };
         readonly public: {
-            readonly http: readonly ["https://sei-testnet.drpc.org"];
+            readonly http: readonly ["https://evm-rpc-testnet.sei-apis.com"];
         };
     };
     sourceId?: number | undefined | undefined;
@@ -84,7 +84,7 @@ export declare const DEFAULT_CHAIN: {
     readonly network: "sei-testnet";
 };
 export declare const DEFAULT_CHAIN_ID: 1328;
-export declare const DEFAULT_RPC_URL: "https://sei-testnet.drpc.org";
+export declare const DEFAULT_RPC_URL: "https://evm-rpc-testnet.sei-apis.com";
 export declare const SUPPORTED_CHAINS: 1328[];
 export declare const CHAIN_NAMES: Record<number, string>;
 export declare const RPC_URLS: Record<number, string>;

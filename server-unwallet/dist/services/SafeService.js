@@ -27,7 +27,7 @@ const ERC20_BALANCE_ABI = [
     }
 ];
 class SafeService {
-    constructor(chainId = chains_1.CHAIN_IDS.SEI_TESTNET, rpcUrl = 'https://sei-testnet.drpc.org') {
+    constructor(chainId = chains_1.CHAIN_IDS.SEI_TESTNET, rpcUrl = 'https://evm-rpc-testnet.sei-apis.com') {
         this.chainId = chainId;
         this.rpcUrl = rpcUrl;
     }
@@ -362,7 +362,7 @@ class SafeService {
     // Get supported networks (informational)
     static getSupportedNetworks() {
         return [
-            { chainId: chains_1.CHAIN_IDS.SEI_TESTNET, name: 'Sei Testnet', rpcUrl: 'https://sei-testnet.drpc.org' }
+            { chainId: chains_1.CHAIN_IDS.SEI_TESTNET, name: 'Sei Testnet', rpcUrl: 'https://evm-rpc-testnet.sei-apis.com' }
         ];
     }
     // Check if Safe address has any token balance (native or ERC20)

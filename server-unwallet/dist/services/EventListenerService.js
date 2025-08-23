@@ -28,7 +28,7 @@ class EventListenerService extends events_1.EventEmitter {
         // Sei Testnet (primary)
         this.publicClients.set(chains_1.CHAIN_IDS.SEI_TESTNET, (0, viem_1.createPublicClient)({
             chain: chains_1.SEI_TESTNET,
-            transport: (0, viem_1.http)('https://sei-testnet.drpc.org'),
+            transport: (0, viem_1.http)('https://evm-rpc-testnet.sei-apis.com'),
         }));
         utils_1.Logger.info('EventListenerService initialized with blockchain clients', {
             supportedChains: Array.from(this.publicClients.keys())
