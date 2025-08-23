@@ -3,17 +3,15 @@ import express from "express";
 import cors from "cors";
 import { paymentMiddleware } from "x402-express";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { 
-  fetchBalanceData, 
-  generateInitialKeysOnClient, 
-  account, 
-  walletClient, 
-  publicClient 
+import axios from "axios";
+import {
+  fetchBalanceData,
+  generateInitialKeysOnClient,
+  account,
+  walletClient,
+  publicClient,
 } from "./utils.js";
-import { 
-  encodeFunctionData, 
-  parseUnits 
-} from "viem";
+import { encodeFunctionData, parseUnits } from "viem";
 import { USDC_ABI } from "./safe/safe-utils.js";
 
 config();
@@ -43,35 +41,16 @@ app.use(
 
 async function getSafeAddress() {
   try {
-    const data = await fetch(
+    const response = await axios.post(
       `${process.env.AGENT_QUERY_URL}/api/user/${process.env.AGENT_USERNAME}/stealth`,
       {
-        method: "POST",
-        headers: {
-          "accept": "*/*",
-          "accept-language": "en-GB,en-US;q=0.9,en;q=0.8,hi;q=0.7",
-          "content-type": "application/json",
-          "dnt": "1",
-          "origin": "http://localhost:3002",
-          "priority": "u=1, i",
-          "referer": "http://localhost:3002/",
-          "sec-ch-ua": '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
-          "sec-ch-ua-mobile": "?0",
-          "sec-ch-ua-platform": '"macOS"',
-          "sec-fetch-dest": "empty",
-          "sec-fetch-mode": "cors",
-          "sec-fetch-site": "cross-site",
-          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
-        },
-        body: JSON.stringify({
-          chainId: 1328,
-          tokenAddress: "0x4fCF1784B31630811181f670Aea7A7bEF803eaED",
-          tokenAmount: "50", // Use higher amount to get safeAddress field
-        }),
+        chainId: 1328,
+        tokenAddress: "0x4fCF1784B31630811181f670Aea7A7bEF803eaED",
+        tokenAmount: "50", // Use higher amount to get safeAddress field
       }
     );
 
-    const json = await data.json();
+    const json = response.data;
     console.log("Server response:", json);
 
     if (!json.success) {
@@ -101,20 +80,28 @@ async function getSafeAddress() {
 async function queryAgent2Payment(question) {
   try {
     console.log("🤖 Querying agent2 for payment requirements...");
-    
-    const response = await fetch(`http://localhost:4022/chat/pro?question=${encodeURIComponent(question)}`);
-    
-    if (response.status === 402) {
-      // Payment required - extract payment requirements
-      const paymentData = await response.json();
-      console.log("💰 Agent2 payment requirements:", paymentData);
-      return { requiresPayment: true, paymentData };
-    } else if (response.status === 200) {
+
+    try {
+      const response = await axios.get(
+        `http://localhost:4022/chat/pro?question=${encodeURIComponent(
+          question
+        )}`
+      );
+
       // No payment required
-      const data = await response.json();
-      return { requiresPayment: false, data };
-    } else {
-      throw new Error(`Agent2 responded with status ${response.status}`);
+      console.log("✅ Agent2 response received without payment");
+      return { requiresPayment: false, data: response.data };
+    } catch (error) {
+      if (error.response && error.response.status === 402) {
+        // Payment required - extract payment requirements
+        const paymentData = error.response.data;
+        console.log("💰 Agent2 payment requirements:", paymentData);
+        return { requiresPayment: true, paymentData };
+      } else {
+        throw new Error(
+          `Agent2 responded with status ${error.response?.status || "unknown"}`
+        );
+      }
     }
   } catch (error) {
     console.error("❌ Error querying agent2:", error);
@@ -126,44 +113,59 @@ async function queryAgent2Payment(question) {
 async function transferFromSafeToEOA(amount) {
   try {
     console.log("🔄 Transferring funds from safe to EOA...");
-    
+
     // Get balance data to find a safe with sufficient funds
     const balanceData = await fetchBalanceData();
-    
+
     if (balanceData.length === 0) {
       throw new Error("No funded safes available");
     }
-    
+
     // Find a safe with sufficient balance
-    const safeWithFunds = balanceData.find(safe => safe.balance >= amount);
+    const safeWithFunds = balanceData.find((safe) => safe.balance >= amount);
     if (!safeWithFunds) {
-      throw new Error(`No safe has sufficient balance. Required: ${amount}, Available: ${balanceData.map(s => s.balance).join(', ')}`);
+      throw new Error(
+        `No safe has sufficient balance. Required: ${amount}, Available: ${balanceData
+          .map((s) => s.balance)
+          .join(", ")}`
+      );
     }
-    
-    console.log(`💰 Using safe ${safeWithFunds.safeAddress} with balance ${safeWithFunds.balance} USDC`);
-    
+
+    console.log(
+      `💰 Using safe ${safeWithFunds.safeAddress} with balance ${safeWithFunds.balance} USDC`
+    );
+
     // Generate spending private key for this safe
-    const spendingKeys = await generateInitialKeysOnClient([safeWithFunds.nonce]);
+    const spendingKeys = await generateInitialKeysOnClient([
+      safeWithFunds.nonce,
+    ]);
     const spendingPrivateKey = spendingKeys[0];
-    
+
     // Create wallet client for the spending account
     const { createWalletClient, http } = await import("viem");
     const { privateKeyToAccount } = await import("viem/accounts");
     const { seiTestnet } = await import("viem/chains");
-    
+
     const spendingAccount = privateKeyToAccount(spendingPrivateKey);
     const spendingWalletClient = createWalletClient({
       account: spendingAccount,
       chain: seiTestnet,
       transport: http(seiTestnet.rpcUrls.default.http[0]),
     });
-    
+
     console.log("🔑 Safe spending details:");
     console.log(`   - Safe address: ${safeWithFunds.safeAddress}`);
     console.log(`   - Safe stealth address: ${spendingAccount.address}`);
-    console.log(`   - Safe spending private key: ${spendingPrivateKey.substring(0, 10)}...`);
-    console.log(`   - Transferring to spending account: ${spendingAccount.address}`);
-    
+    console.log(
+      `   - Safe spending private key: ${spendingPrivateKey.substring(
+        0,
+        10
+      )}...`
+    );
+    console.log(
+      `   - Transferring to spending account: ${spendingAccount.address}`
+    );
+
     // Transfer from safe to spending account (stealth address)
     const transferData = encodeFunctionData({
       abi: USDC_ABI,
@@ -173,37 +175,50 @@ async function transferFromSafeToEOA(amount) {
         parseUnits(amount.toString(), 6), // USDC has 6 decimals
       ],
     });
-    
+
     // Build and execute safe transaction
-    const { buildSafeTransaction, predictSafeAddress, safeSignTypedData, SAFE_ABI } = await import("./safe/safe-utils.js");
+    const {
+      buildSafeTransaction,
+      predictSafeAddress,
+      safeSignTypedData,
+      SAFE_ABI,
+    } = await import("./safe/safe-utils.js");
     const { getContractNetworks } = await import("./safe/safe-contracts.js");
     const Safe = await import("@safe-global/protocol-kit");
-    
+
     // Use the actual safe address from balance data
     const predictedSafeAddress = safeWithFunds.safeAddress;
     const contractNetworks = getContractNetworks(seiTestnet.id);
-    
+
     // Check if Safe is deployed
-    const codeResult = await publicClient.getBytecode({ address: predictedSafeAddress });
+    const codeResult = await publicClient.getBytecode({
+      address: predictedSafeAddress,
+    });
     const isSafeDeployed = codeResult && codeResult !== "0x";
-    
-    console.log(`🔍 Safe deployment status: ${isSafeDeployed ? 'Deployed' : 'Not deployed'}`);
-    
+
+    console.log(
+      `🔍 Safe deployment status: ${
+        isSafeDeployed ? "Deployed" : "Not deployed"
+      }`
+    );
+
     let multicallData = [];
-    
+
     if (!isSafeDeployed) {
       console.log("🚀 Safe not deployed, deploying first...");
-      
+
       // Deploy Safe first
-      const { prepareUTXOTransaction } = await import("./helpers/transaction.js");
-      
+      const { prepareUTXOTransaction } = await import(
+        "./helpers/transaction.js"
+      );
+
       const deploymentResult = await prepareUTXOTransaction(
         {
           nonce: safeWithFunds.nonce,
           safeAddress: predictedSafeAddress,
           stealthAddress: safeWithFunds.stealthAddress,
           balance: safeWithFunds.balance,
-          tokenAddress: safeWithFunds.tokenAddress
+          tokenAddress: safeWithFunds.tokenAddress,
         },
         spendingPrivateKey,
         safeWithFunds.stealthAddress,
@@ -215,30 +230,30 @@ async function transferFromSafeToEOA(amount) {
         Safe,
         privateKeyToAccount
       );
-      
+
       if (deploymentResult.deploymentTx) {
         multicallData.push(deploymentResult.deploymentTx);
         console.log("✅ Added Safe deployment transaction");
       }
-      
+
       multicallData.push(deploymentResult.transferTx);
       console.log("✅ Added USDC transfer transaction");
     } else {
       console.log("✅ Safe already deployed, proceeding with transfer...");
-      
+
       // Get safe nonce
       const nonceData = encodeFunctionData({
         abi: SAFE_ABI,
         functionName: "nonce",
       });
-      
+
       const nonceResult = await publicClient.call({
         to: predictedSafeAddress,
         data: nonceData,
       });
-      
+
       const safeNonce = BigInt(nonceResult.data || "0x0");
-      
+
       // Build safe transaction
       const safeTransaction = buildSafeTransaction({
         to: "0x4fCF1784B31630811181f670Aea7A7bEF803eaED", // USDC token address
@@ -248,7 +263,7 @@ async function transferFromSafeToEOA(amount) {
         safeTxGas: "0",
         nonce: safeNonce,
       });
-      
+
       // Sign the safe transaction
       const signature = await safeSignTypedData(
         spendingWalletClient,
@@ -257,7 +272,7 @@ async function transferFromSafeToEOA(amount) {
         safeTransaction,
         seiTestnet.id
       );
-      
+
       // Execute the transaction
       const execTransactionData = encodeFunctionData({
         abi: SAFE_ABI,
@@ -270,32 +285,38 @@ async function transferFromSafeToEOA(amount) {
           BigInt(safeTransaction.safeTxGas || "0"),
           BigInt(safeTransaction.baseGas || "0"),
           BigInt(safeTransaction.gasPrice || "0"),
-          safeTransaction.gasToken || "0x0000000000000000000000000000000000000000",
-          safeTransaction.refundReceiver || "0x0000000000000000000000000000000000000000",
+          safeTransaction.gasToken ||
+            "0x0000000000000000000000000000000000000000",
+          safeTransaction.refundReceiver ||
+            "0x0000000000000000000000000000000000000000",
           signature,
         ],
       });
-      
-      multicallData = [{
-        target: predictedSafeAddress,
-        allowFailure: false,
-        callData: execTransactionData,
-      }];
+
+      multicallData = [
+        {
+          target: predictedSafeAddress,
+          allowFailure: false,
+          callData: execTransactionData,
+        },
+      ];
     }
-    
+
     // Execute transaction with gas sponsorship
-    const { executeTransactionWithGasSponsorship } = await import("./utxo/index.js");
-    
+    const { executeTransactionWithGasSponsorship } = await import(
+      "./utxo/index.js"
+    );
+
     console.log("📦 Multicall data prepared:", {
       numberOfCalls: multicallData.length,
       calls: multicallData.map((call, index) => ({
         index: index + 1,
         target: call.target,
         allowFailure: call.allowFailure,
-        dataLength: call.callData.length
-      }))
+        dataLength: call.callData.length,
+      })),
     });
-    
+
     const sponsorshipResult = await executeTransactionWithGasSponsorship(
       multicallData,
       {
@@ -305,15 +326,14 @@ async function transferFromSafeToEOA(amount) {
         tokenAddress: "0x4fCF1784B31630811181f670Aea7A7bEF803eaED",
         utxoCount: 1,
         strategy: "single_utxo",
-        isSafeDeployed: isSafeDeployed
+        isSafeDeployed: isSafeDeployed,
       },
       process.env.AGENT_QUERY_URL,
       process.env.AGENT_USERNAME
     );
-    
+
     console.log("✅ Transfer from safe to EOA completed");
     return { success: true, spendingPrivateKey };
-    
   } catch (error) {
     console.error("❌ Error transferring from safe to EOA:", error);
     throw error;
@@ -324,12 +344,12 @@ async function transferFromSafeToEOA(amount) {
 async function signTransferWithAuthorization(paymentData, spendingPrivateKey) {
   try {
     console.log("✍️ Signing TransferWithAuthorization for agent2...");
-    
+
     const { privateKeyToAccount } = await import("viem/accounts");
     const { createWalletClient, http } = await import("viem");
     const { seiTestnet } = await import("viem/chains");
     const crypto = await import("crypto");
-    
+
     // Use spending private key account (stealth address) that now has the funds
     const spendingAccount = privateKeyToAccount(spendingPrivateKey);
     const spendingWalletClient = createWalletClient({
@@ -337,16 +357,18 @@ async function signTransferWithAuthorization(paymentData, spendingPrivateKey) {
       chain: seiTestnet,
       transport: http(seiTestnet.rpcUrls.default.http[0]),
     });
-    
+
     console.log("🔑 TransferWithAuthorization signing details:");
     console.log(`   - Using spending account: ${spendingAccount.address}`);
-    console.log(`   - Spending private key: ${spendingPrivateKey.substring(0, 10)}...`);
+    console.log(
+      `   - Spending private key: ${spendingPrivateKey.substring(0, 10)}...`
+    );
     console.log(`   - This account now has the funds from Safe transfer`);
-    
+
     // Extract payment requirements from Agent2's 402 response
     const paymentRequirements = paymentData.accepts[0];
     console.log("💰 Agent2 payment requirements:", paymentRequirements);
-    
+
     // Create authorization object
     const nonce = "0x" + crypto.default.randomBytes(32).toString("hex");
     const validAfter = "0";
@@ -360,18 +382,18 @@ async function signTransferWithAuthorization(paymentData, spendingPrivateKey) {
       validBefore: validBefore,
       nonce: nonce,
     };
-    
+
     console.log("🔍 Authorization details:", {
       from: authorization.from,
       to: authorization.to,
       value: authorization.value,
       validAfter: authorization.validAfter,
       validBefore: authorization.validBefore,
-      nonce: authorization.nonce
+      nonce: authorization.nonce,
     });
-    
+
     console.log("✅ Authorization created for Agent2:", authorization);
-    
+
     // Create the message to sign (EIP-712 format)
     const domain = {
       name: "USDC",
@@ -409,7 +431,7 @@ async function signTransferWithAuthorization(paymentData, spendingPrivateKey) {
     });
 
     console.log("✅ TransferWithAuthorization signed successfully");
-    
+
     // Create x402 payload
     const paymentPayload = {
       x402Version: 1,
@@ -421,15 +443,16 @@ async function signTransferWithAuthorization(paymentData, spendingPrivateKey) {
       },
     };
 
-    const paymentHeader = Buffer.from(JSON.stringify(paymentPayload)).toString("base64");
-    
+    const paymentHeader = Buffer.from(JSON.stringify(paymentPayload)).toString(
+      "base64"
+    );
+
     return {
       headers: {
         "X-PAYMENT": paymentHeader,
         "Content-Type": "application/json",
       },
     };
-    
   } catch (error) {
     console.error("❌ Error signing TransferWithAuthorization:", error);
     throw error;
@@ -440,23 +463,32 @@ async function signTransferWithAuthorization(paymentData, spendingPrivateKey) {
 async function getAgent2Response(question, paymentHeaders) {
   try {
     console.log("🤖 Getting response from agent2 with payment...");
-    
-    const response = await fetch(`http://localhost:4022/chat/pro?question=${encodeURIComponent(question)}`, {
-      method: "GET",
-      headers: paymentHeaders,
-    });
-    
-    if (response.status === 200) {
-      const data = await response.json();
+
+    try {
+      const response = await axios.get(
+        `http://localhost:4022/chat/pro?question=${encodeURIComponent(
+          question
+        )}`,
+        {
+          headers: paymentHeaders,
+        }
+      );
+
       console.log("✅ Agent2 response received");
-      return data;
-    } else if (response.status === 402) {
-      // Payment still required - let's see what the issue is
-      const errorData = await response.json();
-      console.log("❌ Agent2 still requires payment:", errorData);
-      throw new Error(`Agent2 payment failed: ${errorData.error || 'Unknown payment error'}`);
-    } else {
-      throw new Error(`Agent2 responded with status ${response.status}`);
+      return response.data;
+    } catch (error) {
+      if (error.response && error.response.status === 402) {
+        // Payment still required - let's see what the issue is
+        const errorData = error.response.data;
+        console.log("❌ Agent2 still requires payment:", errorData);
+        throw new Error(
+          `Agent2 payment failed: ${errorData.error || "Unknown payment error"}`
+        );
+      } else {
+        throw new Error(
+          `Agent2 responded with status ${error.response?.status || "unknown"}`
+        );
+      }
     }
   } catch (error) {
     console.error("❌ Error getting agent2 response:", error);
@@ -493,7 +525,8 @@ const dynamicPaymentMiddleware = async (req, res, next) => {
           price: "$0.01",
           network: "sei-testnet",
           config: {
-            description: "Multi-Agent Chat endpoint (Agent1 coordinates with Agent2)",
+            description:
+              "Multi-Agent Chat endpoint (Agent1 coordinates with Agent2)",
             mimeType: "application/json",
           },
         },
@@ -605,7 +638,7 @@ app.get("/chat/pro", async (req, res) => {
       timestamp: new Date().toISOString(),
       type: "gemini_ai_response",
       mode: "pro",
-      agent: "agent1"
+      agent: "agent1",
     };
 
     // Now that Agent1 has been paid, coordinate with Agent2
@@ -616,22 +649,34 @@ app.get("/chat/pro", async (req, res) => {
 
     if (paymentRequirements.requiresPayment) {
       // Debug: Log the payment data structure
-      console.log("🔍 Payment data structure:", JSON.stringify(paymentRequirements.paymentData, null, 2));
-      
+      console.log(
+        "🔍 Payment data structure:",
+        JSON.stringify(paymentRequirements.paymentData, null, 2)
+      );
+
       // Extract amount from payment requirements - Agent2 returns maxAmountRequired in wei
-      const maxAmountRequired = paymentRequirements.paymentData.accepts[0].maxAmountRequired;
+      const maxAmountRequired =
+        paymentRequirements.paymentData.accepts[0].maxAmountRequired;
       const amount = parseFloat(maxAmountRequired) / Math.pow(10, 6); // Convert from wei to USDC (6 decimals)
-      console.log(`💰 Agent2 requires payment of ${amount} USDC (${maxAmountRequired} wei)`);
-      
+      console.log(
+        `💰 Agent2 requires payment of ${amount} USDC (${maxAmountRequired} wei)`
+      );
+
       // Transfer funds from safe to EOA
       const transferResult = await transferFromSafeToEOA(amount);
 
       if (transferResult.success) {
         // Sign TransferWithAuthorization for agent2
-        const signingResult = await signTransferWithAuthorization(paymentRequirements.paymentData, transferResult.spendingPrivateKey);
+        const signingResult = await signTransferWithAuthorization(
+          paymentRequirements.paymentData,
+          transferResult.spendingPrivateKey
+        );
 
         // Get response from agent2 with payment headers
-        const agent2Response = await getAgent2Response(question, signingResult.headers);
+        const agent2Response = await getAgent2Response(
+          question,
+          signingResult.headers
+        );
 
         // Combine both responses
         const combinedResponse = {
@@ -643,11 +688,11 @@ app.get("/chat/pro", async (req, res) => {
             agent1: agent1Response,
             agent2: {
               ...agent2Response,
-              agent: "agent2"
-            }
+              agent: "agent2",
+            },
           },
           summary: `Multi-agent response: Agent1 provided ${agent1Response.answer.length} characters, Agent2 provided ${agent2Response.answer.length} characters.`,
-          payment_flow: "User → Agent1 ($0.01) → Agent2 ($0.001)"
+          payment_flow: "User → Agent1 ($0.01) → Agent2 ($0.001)",
         };
 
         res.json(combinedResponse);
@@ -656,14 +701,14 @@ app.get("/chat/pro", async (req, res) => {
         res.json({
           ...agent1Response,
           note: "Agent2 payment failed, returning only Agent1 response",
-          payment_flow: "User → Agent1 ($0.01) - Agent2 payment failed"
+          payment_flow: "User → Agent1 ($0.01) - Agent2 payment failed",
         });
       }
     } else {
       // No payment required - get agent2 response directly
       const agent2Response = {
         ...paymentRequirements.data,
-        agent: "agent2"
+        agent: "agent2",
       };
 
       // Combine both responses
@@ -674,10 +719,10 @@ app.get("/chat/pro", async (req, res) => {
         mode: "pro",
         responses: {
           agent1: agent1Response,
-          agent2: agent2Response
+          agent2: agent2Response,
         },
         summary: `Multi-agent response: Agent1 provided ${agent1Response.answer.length} characters, Agent2 provided ${agent2Response.answer.length} characters.`,
-        payment_flow: "User → Agent1 ($0.01) - Agent2 (free)"
+        payment_flow: "User → Agent1 ($0.01) - Agent2 (free)",
       };
 
       res.json(combinedResponse);

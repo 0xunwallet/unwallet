@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import { paymentMiddleware } from "x402-express";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import axios from "axios";
 
 config();
 
@@ -31,35 +32,16 @@ app.use(
 
 async function getSafeAddress() {
   try {
-    const data = await fetch(
+    const response = await axios.post(
       `${process.env.AGENT_QUERY_URL}/api/user/${process.env.AGENT_USERNAME}/stealth`,
       {
-        method: "POST",
-        headers: {
-          "accept": "*/*",
-          "accept-language": "en-GB,en-US;q=0.9,en;q=0.8,hi;q=0.7",
-          "content-type": "application/json",
-          "dnt": "1",
-          "origin": "http://localhost:3002",
-          "priority": "u=1, i",
-          "referer": "http://localhost:3002/",
-          "sec-ch-ua": '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
-          "sec-ch-ua-mobile": "?0",
-          "sec-ch-ua-platform": '"macOS"',
-          "sec-fetch-dest": "empty",
-          "sec-fetch-mode": "cors",
-          "sec-fetch-site": "cross-site",
-          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
-        },
-        body: JSON.stringify({
-          chainId: 1328,
-          tokenAddress: "0x4fCF1784B31630811181f670Aea7A7bEF803eaED",
-          tokenAmount: "50", // Use higher amount to get safeAddress field
-        }),
+        chainId: 1328,
+        tokenAddress: "0x4fCF1784B31630811181f670Aea7A7bEF803eaED",
+        tokenAmount: "50", // Use higher amount to get safeAddress field
       }
     );
 
-    const json = await data.json();
+    const json = response.data;
     console.log("Server response:", json);
 
     if (!json.success) {
