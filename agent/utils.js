@@ -244,437 +244,18 @@ const generateInitialKeysOnClient = async (uniqueNonces) => {
   return processedKeys;
 };
 
-const executeTransactionWithGasSponsorship = async (
-  multicallData,
-  metadata = {}
-) => {
-  try {
-    console.log("🌟 Requesting gas sponsorship for transaction...");
-    console.log("📋 Multicall data:", {
-      numberOfCalls: multicallData.length,
-      calls: multicallData.map((call, index) => ({
-        index: index + 1,
-        target: call.target,
-        allowFailure: call.allowFailure,
-        dataLength: call.callData.length,
-      })),
-    });
 
-    // Make request to gas sponsorship endpoint
-    const response = await fetch(
-      `${BACKEND_URL}/api/user/${username}/gas-sponsorship`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          multicallData,
-          metadata: {
-            ...metadata,
-            userAgent: navigator.userAgent,
-            timestamp: new Date().toISOString(),
-            requestId: `${Date.now()}-${Math.random()
-              .toString(36)
-              .substr(2, 9)}`,
-          },
-        }),
-      }
-    );
 
-    const result = await response.json();
-    console.log("📄 Backend response:", result);
+// Import UTXO optimization functions
+import { 
+  findOptimalUTXOCombination,
+  handleUTXOChange,
+  executeTransactionWithGasSponsorship
+} from './utxo/index.js';
 
-    if (!response.ok) {
-      throw new Error(
-        result.message || result.error || "Gas sponsorship request failed"
-      );
-    }
 
-    if (!result.success) {
-      throw new Error(
-        result.message || "Gas sponsorship service returned failure"
-      );
-    }
 
-    console.log("✅ Gas sponsored transaction completed successfully!");
-    console.log("📊 Transaction details:", result);
 
-    // Handle the backend response structure
-    const txHash = result.data?.transactionHash || "pending";
-    const explorerUrl =
-      result.data?.executionDetails?.explorerUrl ||
-      `${currentNetwork?.blockExplorer.url}/tx/${txHash}`;
-
-    return {
-      success: true,
-      txHash: txHash,
-      blockNumber: result.data?.blockNumber || 0,
-      gasUsed: result.data?.gasUsed || "N/A",
-      gasCost: result.data?.gasCost || "N/A",
-      explorerUrl: explorerUrl,
-      receipt: {
-        status: "success",
-        transactionHash: txHash,
-        blockNumber: BigInt(result.data?.blockNumber || 0),
-        gasUsed: BigInt(result.data?.gasUsed || 0),
-      },
-      sponsorDetails: {
-        sponsorAddress: result.data?.sponsorAddress || "Unknown",
-        chainName:
-          result.data?.executionDetails?.chainName || currentNetwork?.name,
-      },
-    };
-  } catch (error) {
-    console.error("❌ Gas sponsorship request failed:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-    throw new Error(`Gas sponsorship failed: ${errorMessage}`);
-  }
-};
-
-// Function to find optimal UTXO combination for target amount
-// Implements industry-standard UTXO optimization algorithms
-const findOptimalUTXOCombination = (balanceData, targetAmount) => {
-  console.log(`🎯 Finding optimal UTXO combination for target: ${targetAmount} USDC`);
-  console.log(`📊 Available UTXOs: ${balanceData.length} Safes with balances`);
-  
-  // Strategy 1: Exact match (highest priority)
-  const exactMatch = balanceData.find(utxo => Math.abs(utxo.balance - targetAmount) < 0.000001);
-  if (exactMatch) {
-    console.log(`🎯 Found exact match! Using single UTXO: ${exactMatch.balance} USDC`);
-    return {
-      selectedUTXOs: [{
-        ...exactMatch,
-        amountToRedeem: exactMatch.balance,
-        isFullRedeem: true
-      }],
-      totalAmount: exactMatch.balance,
-      targetAmount,
-      isTargetReached: true,
-      strategy: 'exact_match',
-      change: 0,
-      score: 0
-    };
-  }
-  
-  // Strategy 2: Branch and Bound algorithm (standard in Bitcoin Core)
-  const branchAndBoundResult = branchAndBoundSelection(balanceData, targetAmount);
-  if (branchAndBoundResult && branchAndBoundResult.isTargetReached) {
-    console.log(`✅ Branch and Bound found optimal solution`);
-    return branchAndBoundResult;
-  }
-  
-  // Strategy 3: Knapsack Problem approach
-  const knapsackResult = knapsackSelection(balanceData, targetAmount);
-  if (knapsackResult && knapsackResult.isTargetReached) {
-    console.log(`✅ Knapsack algorithm found solution`);
-    return knapsackResult;
-  }
-  
-  // Strategy 4: Bitcoin Core's "largest first" with change minimization
-  const bitcoinCoreResult = bitcoinCoreSelection(balanceData, targetAmount);
-  if (bitcoinCoreResult && bitcoinCoreResult.isTargetReached) {
-    console.log(`✅ Bitcoin Core algorithm found solution`);
-    return bitcoinCoreResult;
-  }
-  
-  // Strategy 5: Greedy fallback (smallest first)
-  console.log(`⚠️ Falling back to greedy approach...`);
-  const result = greedySelection(balanceData, targetAmount);
-  
-  // Log results
-  console.log(`✅ UTXO Selection Results:`);
-  console.log(`   - Strategy: ${result.strategy}`);
-  console.log(`   - Target Amount: ${targetAmount} USDC`);
-  console.log(`   - Selected UTXOs: ${result.selectedUTXOs.length}`);
-  console.log(`   - Total Amount: ${result.totalAmount.toFixed(6)} USDC`);
-  console.log(`   - Change: ${result.change.toFixed(6)} USDC`);
-  console.log(`   - Score: ${result.score}`);
-  
-  result.selectedUTXOs.forEach((utxo, index) => {
-    console.log(`   - UTXO ${index + 1}: ${utxo.safeAddress} (${utxo.balance} → ${utxo.amountToRedeem} USDC)`);
-  });
-  
-  return result;
-};
-
-// Branch and Bound algorithm (standard in UTXO optimization)
-const branchAndBoundSelection = (balanceData, targetAmount) => {
-  console.log(`🔍 Running Branch and Bound algorithm...`);
-  
-  // Sort UTXOs by value (descending) for better pruning
-  const sortedUTXOs = [...balanceData].sort((a, b) => b.balance - a.balance);
-  
-  let bestSolution = null;
-  let bestScore = Infinity;
-  
-  const branchAndBound = (index, currentSelection, currentSum, remainingTarget) => {
-    // Pruning: if current sum already exceeds target significantly, stop
-    if (currentSum > targetAmount * 1.5) {
-      return;
-    }
-    
-         // Pruning: if remaining target is negative, we have a solution
-     if (remainingTarget <= 0) {
-       const change = currentSum - targetAmount;
-       const score = calculateScore(currentSelection.length, change, currentSum, targetAmount);
-      
-      if (score < bestScore) {
-        bestScore = score;
-        bestSolution = {
-          selectedUTXOs: currentSelection.map(utxo => ({
-            ...utxo,
-            amountToRedeem: utxo.balance,
-            isFullRedeem: true
-          })),
-          totalAmount: currentSum,
-          targetAmount,
-          isTargetReached: true,
-          strategy: 'branch_and_bound',
-          change,
-          score
-        };
-      }
-      return;
-    }
-    
-    // Pruning: if we've used too many UTXOs, stop
-    if (currentSelection.length >= 6) {
-      return;
-    }
-    
-    // Pruning: if we've processed all UTXOs
-    if (index >= sortedUTXOs.length) {
-      return;
-    }
-    
-    // Try including current UTXO
-    const currentUTXO = sortedUTXOs[index];
-    if (currentUTXO.balance <= remainingTarget + targetAmount * 0.1) { // Allow 10% overage
-      branchAndBound(
-        index + 1,
-        [...currentSelection, currentUTXO],
-        currentSum + currentUTXO.balance,
-        remainingTarget - currentUTXO.balance
-      );
-    }
-    
-    // Try excluding current UTXO
-    branchAndBound(index + 1, currentSelection, currentSum, remainingTarget);
-  };
-  
-  branchAndBound(0, [], 0, targetAmount);
-  
-  return bestSolution;
-};
-
-// Knapsack Problem approach (0/1 Knapsack)
-const knapsackSelection = (balanceData, targetAmount) => {
-  console.log(`🔍 Running Knapsack algorithm...`);
-  
-  // Use dynamic programming for 0/1 knapsack
-  const n = balanceData.length;
-  const maxWeight = Math.ceil(targetAmount * 1000000); // Convert to smallest unit
-  const weights = balanceData.map(utxo => Math.ceil(utxo.balance * 1000000));
-  const values = balanceData.map(utxo => utxo.balance * 1000000); // Value = weight for UTXOs
-  
-  // Initialize DP table
-  const dp = Array(n + 1).fill().map(() => Array(maxWeight + 1).fill(0));
-  const selected = Array(n + 1).fill().map(() => Array(maxWeight + 1).fill(false));
-  
-  // Fill DP table
-  for (let i = 1; i <= n; i++) {
-    for (let w = 0; w <= maxWeight; w++) {
-      if (weights[i - 1] <= w) {
-        const includeValue = dp[i - 1][w - weights[i - 1]] + values[i - 1];
-        if (includeValue > dp[i - 1][w]) {
-          dp[i][w] = includeValue;
-          selected[i][w] = true;
-        } else {
-          dp[i][w] = dp[i - 1][w];
-        }
-      } else {
-        dp[i][w] = dp[i - 1][w];
-      }
-    }
-  }
-  
-  // Backtrack to find selected UTXOs
-  const selectedUTXOs = [];
-  let w = maxWeight;
-  for (let i = n; i > 0; i--) {
-    if (selected[i][w]) {
-      selectedUTXOs.push(balanceData[i - 1]);
-      w -= weights[i - 1];
-    }
-  }
-  
-  if (selectedUTXOs.length === 0) {
-    return null;
-  }
-  
-  const totalAmount = selectedUTXOs.reduce((sum, utxo) => sum + utxo.balance, 0);
-  const change = totalAmount - targetAmount;
-  
-  return {
-    selectedUTXOs: selectedUTXOs.map(utxo => ({
-      ...utxo,
-      amountToRedeem: utxo.balance,
-      isFullRedeem: true
-    })),
-    totalAmount,
-    targetAmount,
-    isTargetReached: totalAmount >= targetAmount,
-         strategy: 'knapsack',
-     change: Math.max(0, change),
-     score: calculateScore(selectedUTXOs.length, change, totalAmount, targetAmount)
-  };
-};
-
-// Bitcoin Core's coin selection algorithm
-const bitcoinCoreSelection = (balanceData, targetAmount) => {
-  console.log(`🔍 Running Bitcoin Core algorithm...`);
-  
-  // Sort by value (descending) - Bitcoin Core uses largest first
-  const sortedUTXOs = [...balanceData].sort((a, b) => b.balance - a.balance);
-  
-  let selectedUTXOs = [];
-  let totalAmount = 0;
-  
-  // Try to find a single UTXO that's close to target
-  for (const utxo of sortedUTXOs) {
-    if (utxo.balance >= targetAmount && utxo.balance <= targetAmount * 1.5) {
-      selectedUTXOs = [utxo];
-      totalAmount = utxo.balance;
-      break;
-    }
-  }
-  
-  // If no single UTXO found, use largest first approach
-  if (selectedUTXOs.length === 0) {
-    for (const utxo of sortedUTXOs) {
-      if (totalAmount < targetAmount) {
-        selectedUTXOs.push(utxo);
-        totalAmount += utxo.balance;
-      } else {
-        break;
-      }
-    }
-  }
-  
-  if (selectedUTXOs.length === 0) {
-    return null;
-  }
-  
-  const change = totalAmount - targetAmount;
-  
-  return {
-    selectedUTXOs: selectedUTXOs.map(utxo => ({
-      ...utxo,
-      amountToRedeem: utxo.balance,
-      isFullRedeem: true
-    })),
-    totalAmount,
-    targetAmount,
-    isTargetReached: totalAmount >= targetAmount,
-         strategy: 'bitcoin_core',
-     change: Math.max(0, change),
-     score: calculateScore(selectedUTXOs.length, change, totalAmount, targetAmount)
-  };
-};
-
-// Greedy selection (smallest first)
-const greedySelection = (balanceData, targetAmount) => {
-  console.log(`🔍 Running Greedy algorithm (smallest first)...`);
-  
-  const sortedUTXOs = [...balanceData].sort((a, b) => a.balance - b.balance);
-  
-  let selectedUTXOs = [];
-  let totalAmount = 0;
-  
-  for (const utxo of sortedUTXOs) {
-    if (totalAmount < targetAmount) {
-      selectedUTXOs.push(utxo);
-      totalAmount += utxo.balance;
-    } else {
-      break;
-    }
-  }
-  
-  const change = totalAmount - targetAmount;
-  
-  return {
-    selectedUTXOs: selectedUTXOs.map(utxo => ({
-      ...utxo,
-      amountToRedeem: utxo.balance,
-      isFullRedeem: true
-    })),
-    totalAmount,
-    targetAmount,
-    isTargetReached: totalAmount >= targetAmount,
-         strategy: 'greedy_smallest_first',
-     change: Math.max(0, change),
-     score: calculateScore(selectedUTXOs.length, change, totalAmount, targetAmount)
-  };
-};
-
-// Standard scoring function based on UTXO optimization research
-const calculateScore = (utxoCount, change, totalAmount, targetAmount) => {
-  // Base penalty for UTXO count (each UTXO adds transaction cost)
-  let score = utxoCount * 100;
-  
-  // Heavy penalty for change (wasteful)
-  score += change * 1000;
-  
-  // Penalty for using too much total amount
-  if (totalAmount > targetAmount * 2) {
-    score += (totalAmount - targetAmount * 2) * 500;
-  }
-  
-  // Bonus for efficient combinations
-  if (utxoCount <= 2 && change < targetAmount * 0.1) {
-    score -= 200; // Significant bonus for efficient solutions
-  }
-  
-  return score;
-};
-
-// Function to handle change management in UTXO model
-const handleUTXOChange = (utxoSelection, recipientAddress, agentAddress) => {
-  const change = utxoSelection.change;
-  
-  if (change <= 0) {
-    console.log("✅ No change to handle");
-    return null;
-  }
-  
-  console.log(`💰 Handling change: ${change.toFixed(6)} USDC`);
-  
-  // Create a new UTXO for the change amount
-  // In a real implementation, this would create a new stealth address
-  // For now, we'll send change back to the agent address
-  const changeRecipient = agentAddress || recipientAddress;
-  
-  return {
-    recipient: changeRecipient,
-    amount: change,
-    isChange: true
-  };
-};
-
-// Enhanced UTXO selection with change handling
-const findOptimalUTXOCombinationWithChange = (balanceData, targetAmount, agentAddress) => {
-  const utxoSelection = findOptimalUTXOCombination(balanceData, targetAmount);
-  
-  // Handle change if any
-  const changeInfo = handleUTXOChange(utxoSelection, recipientAddress, agentAddress);
-  
-  return {
-    ...utxoSelection,
-    changeInfo
-  };
-};
 
 const processUTXORedemptionWithSponsorship = async (targetAmount = 0.0003) => {
   // Fetch balance data from API
@@ -685,7 +266,10 @@ const processUTXORedemptionWithSponsorship = async (targetAmount = 0.0003) => {
   }
   
   // Find optimal UTXO combination
-  const utxoSelection = findOptimalUTXOCombinationWithChange(balanceData, targetAmount, account.address);
+  const utxoSelection = findOptimalUTXOCombination(balanceData, targetAmount);
+  
+  // Handle change if any
+  const changeInfo = handleUTXOChange(utxoSelection, recipientAddress, account.address);
   
   if (!utxoSelection.isTargetReached) {
     console.log(`⚠️ Warning: Cannot reach target amount ${targetAmount} USDC`);
@@ -928,7 +512,9 @@ const processUTXORedemptionWithSponsorship = async (targetAmount = 0.0003) => {
         recipientAddress: recipientAddress,
         tokenAddress: utxoSelection.selectedUTXOs[0].tokenAddress, // All should be same token
         symbol: "USDC",
-      }
+      },
+      BACKEND_URL,
+      username
     );
 
     console.log("✅ UTXO redemption completed successfully!");
@@ -1001,8 +587,7 @@ const processUTXORedemptionWithSponsorship = async (targetAmount = 0.0003) => {
   }
 };
 
-// Export functions for testing
-export { findOptimalUTXOCombination, findOptimalUTXOCombinationWithChange };
+
 
 // Execute UTXO-style redemption for target amount
 const finalResult = await processUTXORedemptionWithSponsorship(0.0003); // Target 0.0003 USDC
