@@ -29,107 +29,111 @@ dotenv.config();
 const BACKEND_URL = "https://unwall-production.up.railway.app";
 
 const recipientAddress = "0xc6377415Ee98A7b71161Ee963603eE52fF7750FC";
-const username = "agent1";
-const balanceData = [
-  {
-    address: "0xAF9fC206261DF20a7f2Be9B379B101FAFd983117",
-    balance: 0.01,
-    symbol: "USDC",
-    rawBalance: "10000",
-    nonce: 48,
-    decimals: 6,
-    tokenAddress: "0x4fCF1784B31630811181f670Aea7A7bEF803eaED",
-    transactionHash:
-      "0xd49df3695eef20ec51d3e6576caabdcb3f971ba80f9d02fa7a166935103d95eb",
-    stealthAddress: "0xaf5ab6e55bf9151707b6d9951be6929ed667343e",
-    safeAddress: "0xF8115536C3c629841FA92F5086C362Cd44E9cF41",
-    isFunded: true,
-  },
-  {
-    address: "0xAF9fC206261DF20a7f2Be9B379B101FAFd983117",
-    balance: 0.01,
-    symbol: "USDC",
-    rawBalance: "10000",
-    nonce: 47,
-    decimals: 6,
-    tokenAddress: "0x4fCF1784B31630811181f670Aea7A7bEF803eaED",
-    transactionHash:
-      "0x78fa8c321c2bccf5b8e25c8d21626135625e3cfa28e605aeedeabef1982d8eb9",
-    stealthAddress: "0xab825c26254b307879579e132910b2c0915cf455",
-    safeAddress: "0xa0DaAC90ea81Bc8920C591573faacd265661262D",
-    isFunded: true,
-  },
-  {
-    address: "0xAF9fC206261DF20a7f2Be9B379B101FAFd983117",
-    balance: 0.0001,
-    symbol: "USDC",
-    rawBalance: "100",
-    nonce: 46,
-    decimals: 6,
-    tokenAddress: "0x4fCF1784B31630811181f670Aea7A7bEF803eaED",
-    transactionHash:
-      "0xc04e70dcec0a6753282fe472dc692e44da24b4771ccec5698f222d940c7d6fdb",
-    stealthAddress: "0x6fdadff32941f5a42f19e1c5aa8d8f2b7f0bf8e6",
-    safeAddress: "0x68f01d0Ec730E9C29Adafaf5d8Ee5BddE106297b",
-    isFunded: true,
-  },
-  {
-    address: "0xAF9fC206261DF20a7f2Be9B379B101FAFd983117",
-    balance: 0.0001,
-    symbol: "USDC",
-    rawBalance: "100",
-    nonce: 45,
-    decimals: 6,
-    tokenAddress: "0x4fCF1784B31630811181f670Aea7A7bEF803eaED",
-    transactionHash:
-      "0xb8e2979019eeae16b9b9ef8a640e09ec641a8cb4b2ed9487d155e752009d7de3",
-    stealthAddress: "0xe3d26846eb729da2e3bedc2aa9faeec9ba9006bd",
-    safeAddress: "0x72f6D7b33cB12460F6BFAD99848a3E60a52f1e42",
-    isFunded: true,
-  },
-  {
-    address: "0xAF9fC206261DF20a7f2Be9B379B101FAFd983117",
-    balance: 0.0001,
-    symbol: "USDC",
-    rawBalance: "100",
-    nonce: 44,
-    decimals: 6,
-    tokenAddress: "0x4fCF1784B31630811181f670Aea7A7bEF803eaED",
-    transactionHash:
-      "0x8724eca0560195b7fc928bb3656715198846346b467bcb14b09bc72ee93a4b65",
-    stealthAddress: "0x51aceee8d75b011882d2e915d4d5046be458f5d9",
-    safeAddress: "0xF10bA8BbD0A45151A1a7CF4BF80A27FCC249F044",
-    isFunded: true,
-  },
-  {
-    address: "0xAF9fC206261DF20a7f2Be9B379B101FAFd983117",
-    balance: 0.0001,
-    symbol: "USDC",
-    rawBalance: "100",
-    nonce: 43,
-    decimals: 6,
-    tokenAddress: "0x4fCF1784B31630811181f670Aea7A7bEF803eaED",
-    transactionHash:
-      "0x587da1f15169731f6d205e9dd2a555a63c16a58042c3167212a401e089a1ec3c",
-    stealthAddress: "0xac514b3e56ce0eafb5311e738201c685a78ad3bc",
-    safeAddress: "0x7c429182822a70B897e205f4Ba13937D1b3B2d07",
-    isFunded: true,
-  },
-  {
-    address: "0xAF9fC206261DF20a7f2Be9B379B101FAFd983117",
-    balance: 0.0005,
-    symbol: "USDC",
-    rawBalance: "500",
-    nonce: 42,
-    decimals: 6,
-    tokenAddress: "0x4fCF1784B31630811181f670Aea7A7bEF803eaED",
-    transactionHash:
-      "0xbf9285d9e8d0fe073fb66d9aa59d8e9fe1405fadfbce8a9f899e97b7132cdbf5",
-    stealthAddress: "0xc99ded2e32c1fd01e8492fb02ba5d4e819189f0c",
-    safeAddress: "0xB1C5D706Ad1F73E2e50D82bF43b55a2c26809104",
-    isFunded: true,
-  },
-];
+const username = process.env.AGENT_USERNAME || "agent1";
+
+// Function to fetch balance data from API
+const fetchBalanceData = async () => {
+  try {
+    console.log("📡 Fetching balance data from API...");
+    console.log("🔗 URL:", `${BACKEND_URL}/api/user/${username}/funding-stats`);
+    
+    const response = await fetch(
+      `${BACKEND_URL}/api/user/${username}/funding-stats`
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("📄 Raw API response structure:", {
+      success: data.success,
+      hasData: !!data.data,
+      hasFundedAddresses: !!(data.data && data.data.fundedAddresses),
+      fundedAddressesCount: data.data?.fundedAddresses?.length || 0
+    });
+    
+    // Extract funded addresses from the response
+    if (!data.success || !data.data || !data.data.fundedAddresses) {
+      throw new Error("API response does not contain funded addresses");
+    }
+    
+    const fundedAddresses = data.data.fundedAddresses;
+    
+    console.log("🔍 Checking actual USDC balance for each Safe...");
+    
+    // Check actual balance for each Safe and filter out zero balances
+    const balanceDataWithActualBalance = [];
+    
+    for (const item of fundedAddresses) {
+      try {
+        console.log(`🔍 Checking balance for Safe: ${item.safeAddress} (nonce: ${item.nonce})`);
+        
+        // Check USDC balance of the Safe
+        const balanceData = encodeFunctionData({
+          abi: USDC_ABI,
+          functionName: "balanceOf",
+          args: [item.safeAddress],
+        });
+
+        const balanceResult = await publicClient.call({
+          to: item.tokenAddress,
+          data: balanceData,
+        });
+
+        const actualBalance = BigInt(balanceResult.data || "0x0");
+        const actualBalanceFormatted = Number(actualBalance) / Math.pow(10, 6); // USDC has 6 decimals
+        
+        console.log(`💰 Safe ${item.safeAddress} has ${actualBalanceFormatted} USDC`);
+        
+        // Only include Safes with positive balance
+        if (actualBalance > 0) {
+          balanceDataWithActualBalance.push({
+            address: item.fromAddress,
+            balance: actualBalanceFormatted,
+            symbol: "USDC",
+            rawBalance: actualBalance.toString(),
+            nonce: item.nonce,
+            decimals: 6,
+            tokenAddress: item.tokenAddress,
+            transactionHash: item.transactionHash,
+            stealthAddress: item.stealthAddress,
+            safeAddress: item.safeAddress,
+            isFunded: true,
+            id: item.id,
+            chainId: item.chainId,
+            chainName: item.chainName,
+            generatedAt: item.generatedAt,
+            lastCheckedAt: item.lastCheckedAt
+          });
+        } else {
+          console.log(`❌ Safe ${item.safeAddress} has zero balance, skipping`);
+        }
+      } catch (error) {
+        console.error(`❌ Error checking balance for Safe ${item.safeAddress}:`, error);
+        // Continue with other Safes even if one fails
+      }
+    }
+
+    console.log("✅ Balance data fetched and filtered successfully:", {
+      totalSafes: fundedAddresses.length,
+      safesWithBalance: balanceDataWithActualBalance.length,
+      safesWithZeroBalance: fundedAddresses.length - balanceDataWithActualBalance.length,
+      firstItem: balanceDataWithActualBalance[0] ? { 
+        nonce: balanceDataWithActualBalance[0].nonce, 
+        balance: balanceDataWithActualBalance[0].balance, 
+        symbol: balanceDataWithActualBalance[0].symbol,
+        stealthAddress: balanceDataWithActualBalance[0].stealthAddress,
+        safeAddress: balanceDataWithActualBalance[0].safeAddress
+      } : null
+    });
+
+    return balanceDataWithActualBalance;
+  } catch (error) {
+    console.error("❌ Failed to fetch balance data:", error);
+    throw error;
+  }
+};
 
 const privateKey = process.env.AGENT_PRIVATE_KEY;
 
@@ -329,183 +333,298 @@ const executeTransactionWithGasSponsorship = async (
   }
 };
 
-const processSingleRedemptionWithSponsorship = async (
-  index = 0,
-  nonce = balanceData[index].nonce
-) => {
-  // Set this specific payment as redeeming
-  const payment = balanceData[index];
+// Function to find optimal UTXO combination for target amount
+const findOptimalUTXOCombination = (balanceData, targetAmount) => {
+  console.log(`🎯 Finding optimal UTXO combination for target: ${targetAmount} USDC`);
+  console.log(`📊 Available UTXOs: ${balanceData.length} Safes with balances`);
+  
+  // Sort balances in descending order for greedy approach
+  const sortedBalances = [...balanceData].sort((a, b) => b.balance - a.balance);
+  
+  let selectedUTXOs = [];
+  let cumulativeAmount = 0;
+  let remainingAmount = targetAmount;
+  
+  // Greedy algorithm: pick largest UTXOs first
+  for (const utxo of sortedBalances) {
+    if (cumulativeAmount >= targetAmount) {
+      break; // We've reached our target
+    }
+    
+    if (utxo.balance <= remainingAmount) {
+      // This UTXO can be fully used
+      selectedUTXOs.push({
+        ...utxo,
+        amountToRedeem: utxo.balance,
+        isFullRedeem: true
+      });
+      cumulativeAmount += utxo.balance;
+      remainingAmount -= utxo.balance;
+    } else if (utxo.balance > remainingAmount && remainingAmount > 0) {
+      // This UTXO is larger than needed, but we can use it
+      selectedUTXOs.push({
+        ...utxo,
+        amountToRedeem: remainingAmount,
+        isFullRedeem: false
+      });
+      cumulativeAmount += remainingAmount;
+      remainingAmount = 0;
+    }
+  }
+  
+  console.log(`✅ UTXO Selection Results:`);
+  console.log(`   - Target Amount: ${targetAmount} USDC`);
+  console.log(`   - Selected UTXOs: ${selectedUTXOs.length}`);
+  console.log(`   - Total Amount: ${cumulativeAmount.toFixed(6)} USDC`);
+  console.log(`   - Remaining Target: ${remainingAmount.toFixed(6)} USDC`);
+  
+  selectedUTXOs.forEach((utxo, index) => {
+    console.log(`   - UTXO ${index + 1}: ${utxo.safeAddress} (${utxo.balance} → ${utxo.amountToRedeem} USDC)`);
+  });
+  
+  return {
+    selectedUTXOs,
+    totalAmount: cumulativeAmount,
+    targetAmount,
+    isTargetReached: cumulativeAmount >= targetAmount
+  };
+};
+
+const processUTXORedemptionWithSponsorship = async (targetAmount = 0.0003) => {
+  // Fetch balance data from API
+  const balanceData = await fetchBalanceData();
+  
+  if (balanceData.length === 0) {
+    throw new Error("No Safes with positive balance found");
+  }
+  
+  // Find optimal UTXO combination
+  const utxoSelection = findOptimalUTXOCombination(balanceData, targetAmount);
+  
+  if (!utxoSelection.isTargetReached) {
+    console.log(`⚠️ Warning: Cannot reach target amount ${targetAmount} USDC`);
+    console.log(`   Available: ${utxoSelection.totalAmount.toFixed(6)} USDC`);
+    console.log(`   Shortfall: ${(targetAmount - utxoSelection.totalAmount).toFixed(6)} USDC`);
+  }
+  
+  console.log("🚀 Starting UTXO-style redemption process...");
 
   try {
-    console.log("🚀 Starting sponsored redemption process...");
-    console.log("📋 Payment details:", payment);
-    console.log("🔢 Nonce:", nonce);
-
-    // Generate stealth private key (same as before)
-    const keys = await generateInitialKeysOnClient([nonce]);
-
-    console.log("🔐 Keys:", keys);
-
-    const spendingPrivateKey = keys[0];
-    const stealthAddress = privateKeyToAccount(spendingPrivateKey).address;
-
-    console.log("🔐 Stealth address derived:", stealthAddress);
-
-    // Predict Safe address (same as before)
-    const predictedSafeAddress = await predictSafeAddress(
-      stealthAddress,
-      seiTestnet.rpcUrls.default.http[0]
-    );
-    console.log("🏦 Predicted Safe address:", predictedSafeAddress);
-
-    const predictedSafe = {
-      safeAccountConfig: {
-        owners: [stealthAddress],
-        threshold: 1,
-      },
-      safeDeploymentConfig: {
-        saltNonce: "0",
-      },
-    };
-
-    const RPC_URL = seiTestnet.rpcUrls.default.http[0];
-
-    // Get custom contract networks configuration for the current network
-    const contractNetworks = getContractNetworks(seiTestnet.id);
-
-    console.log("🔧 Using custom contract networks for current network:", {
-      chainId: seiTestnet.id,
-      contractNetworks,
-    });
-
-    const protocolKit = await Safe.init({
-      provider: RPC_URL,
-      signer: stealthAddress,
-      predictedSafe,
-      contractNetworks,
-    });
-
-    const deploymentTransaction =
-      await protocolKit.createSafeDeploymentTransaction();
-
-    console.log(
-      "✅ Safe deployment transaction created",
-      deploymentTransaction
-    );
-
-    // Create USDC transfer transaction (same as before)
-    console.log("💸 Creating USDT transfer transaction from Safe...");
-
-    // Create wallet client with spending private key
-    const spendingWalletClient = createWalletClient({
-      account: privateKeyToAccount(spendingPrivateKey),
-      chain: seiTestnet,
-      transport: http(RPC_URL),
-    });
-    console.log("payment required", payment.balance);
-    // Encode USDC transfer function data
-    const transferData = encodeFunctionData({
-      abi: [
-        {
-          inputs: [
-            { name: "to", type: "address" },
-            { name: "amount", type: "uint256" },
-          ],
-          name: "transfer",
-          outputs: [{ name: "", type: "bool" }],
-          stateMutability: "nonpayable",
-          type: "function",
+    // Process each UTXO to generate stealth keys and prepare transactions
+    const utxoTransactions = [];
+    const allNonces = utxoSelection.selectedUTXOs.map(utxo => utxo.nonce);
+    
+    console.log(`🔢 Processing ${utxoSelection.selectedUTXOs.length} UTXOs with nonces:`, allNonces);
+    
+    // Generate stealth keys for all nonces
+    const allKeys = await generateInitialKeysOnClient(allNonces);
+    console.log(`🔐 Generated ${allKeys.length} stealth keys`);
+    
+    // Process each UTXO
+    for (let i = 0; i < utxoSelection.selectedUTXOs.length; i++) {
+      const utxo = utxoSelection.selectedUTXOs[i];
+      const spendingPrivateKey = allKeys[i];
+      const stealthAddress = privateKeyToAccount(spendingPrivateKey).address;
+      
+      console.log(`\n🔍 Processing UTXO ${i + 1}/${utxoSelection.selectedUTXOs.length}:`);
+      console.log(`   - Nonce: ${utxo.nonce}`);
+      console.log(`   - Stealth Address: ${stealthAddress}`);
+      console.log(`   - Safe Address: ${utxo.safeAddress}`);
+      console.log(`   - Amount to Redeem: ${utxo.amountToRedeem} USDC`);
+      
+      // Predict Safe address
+      const predictedSafeAddress = await predictSafeAddress(
+        stealthAddress,
+        seiTestnet.rpcUrls.default.http[0]
+      );
+      console.log(`   - Predicted Safe: ${predictedSafeAddress}`);
+      
+      // Check if Safe is deployed
+      const predictedSafe = {
+        safeAccountConfig: {
+          owners: [stealthAddress],
+          threshold: 1,
         },
-      ],
-      functionName: "transfer",
-      args: [
-        recipientAddress,
-        parseUnits(payment.balance.toString(), payment.decimals),
-      ],
-    });
+        safeDeploymentConfig: {
+          saltNonce: "0",
+        },
+      };
 
-    // Build Safe transaction (same as before)
-    const safeTransaction = buildSafeTransaction({
-      to: payment.tokenAddress,
-      value: "0",
-      data: transferData,
-      operation: 0,
-      safeTxGas: "0",
-      nonce: 0,
-    });
+      const RPC_URL = seiTestnet.rpcUrls.default.http[0];
+      const contractNetworks = getContractNetworks(seiTestnet.id);
 
-    // Sign the Safe transaction with proper account type
-    const account = privateKeyToAccount(spendingPrivateKey);
-    const signature = await safeSignTypedData(
-      spendingWalletClient,
-      account,
-      predictedSafeAddress,
-      safeTransaction,
-      seiTestnet.id
-    );
+      const protocolKit = await Safe.init({
+        provider: RPC_URL,
+        signer: stealthAddress,
+        predictedSafe,
+        contractNetworks,
+      });
 
-    console.log("✅ Safe transaction signed successfully");
+      // Check if Safe is already deployed
+      let isSafeDeployed = false;
+      let deploymentTransaction = null;
+      let safeNonce = 0;
+      
+      try {
+        isSafeDeployed = await protocolKit.isSafeDeployed();
+      } catch (error) {
+        console.log(`   - Safe not deployed yet, will create deployment transaction`);
+        isSafeDeployed = false;
+      }
+      
+      if (!isSafeDeployed) {
+        try {
+          deploymentTransaction = await protocolKit.createSafeDeploymentTransaction();
+          console.log(`   - ✅ Safe deployment transaction created`);
+          safeNonce = await protocolKit.getNonce();
+        } catch (error) {
+          console.error(`   - ❌ Failed to create Safe deployment transaction:`, error);
+          throw error;
+        }
+      } else {
+        console.log(`   - ℹ️ Safe is already deployed, skipping deployment`);
+      }
+      
+      // Create USDC transfer transaction
+      const spendingWalletClient = createWalletClient({
+        account: privateKeyToAccount(spendingPrivateKey),
+        chain: seiTestnet,
+        transport: http(RPC_URL),
+      });
+      
+      // Encode USDC transfer function data
+      const transferData = encodeFunctionData({
+        abi: [
+          {
+            inputs: [
+              { name: "to", type: "address" },
+              { name: "amount", type: "uint256" },
+            ],
+            name: "transfer",
+            outputs: [{ name: "", type: "bool" }],
+            stateMutability: "nonpayable",
+            type: "function",
+          },
+        ],
+        functionName: "transfer",
+        args: [
+          recipientAddress,
+          parseUnits(utxo.amountToRedeem.toString(), utxo.decimals),
+        ],
+      });
 
-    // Encode execTransaction call (same as before)
-    const execTransactionData = encodeFunctionData({
-      abi: SAFE_ABI,
-      functionName: "execTransaction",
-      args: [
-        safeTransaction.to,
-        BigInt(safeTransaction.value || "0"),
-        safeTransaction.data,
-        safeTransaction.operation,
-        BigInt(safeTransaction.safeTxGas || "0"),
-        BigInt(safeTransaction.baseGas || "0"),
-        BigInt(safeTransaction.gasPrice || "0"),
-        safeTransaction.gasToken ||
-          "0x0000000000000000000000000000000000000000",
-        safeTransaction.refundReceiver ||
-          "0x0000000000000000000000000000000000000000",
-        signature,
-      ],
-    });
+      // Build Safe transaction
+      const safeTransaction = buildSafeTransaction({
+        to: utxo.tokenAddress,
+        value: "0",
+        data: transferData,
+        operation: 0,
+        safeTxGas: "0",
+        nonce: safeNonce + 1, // always add safe nonce + 1 to the nonce
+      });
 
-    console.log("✅ execTransaction data encoded");
+      // Sign the Safe transaction
+      const account = privateKeyToAccount(spendingPrivateKey);
+      const signature = await safeSignTypedData(
+        spendingWalletClient,
+        account,
+        predictedSafeAddress,
+        safeTransaction,
+        seiTestnet.id
+      );
 
-    // Prepare multicall data (same as before)
-    const multicallData = [
-      // Deploy Safe
-      {
-        target: deploymentTransaction.to,
+      console.log(`   - ✅ Safe transaction signed successfully`);
+
+      // Encode execTransaction call
+      const execTransactionData = encodeFunctionData({
+        abi: SAFE_ABI,
+        functionName: "execTransaction",
+        args: [
+          safeTransaction.to,
+          BigInt(safeTransaction.value || "0"),
+          safeTransaction.data,
+          safeTransaction.operation,
+          BigInt(safeTransaction.safeTxGas || "0"),
+          BigInt(safeTransaction.baseGas || "0"),
+          BigInt(safeTransaction.gasPrice || "0"),
+          safeTransaction.gasToken ||
+            "0x0000000000000000000000000000000000000000",
+          safeTransaction.refundReceiver ||
+            "0x0000000000000000000000000000000000000000",
+          signature,
+        ],
+      });
+
+      // Store transaction data for multicall
+      utxoTransactions.push({
+        utxo,
+        stealthAddress,
+        predictedSafeAddress,
+        isSafeDeployed,
+        deploymentTransaction,
+        execTransactionData,
+        spendingPrivateKey
+      });
+    }
+
+        // Build multicall data from all UTXO transactions
+    console.log("\n📋 Building multicall data for all UTXOs...");
+    const multicallData = [];
+    
+    for (let i = 0; i < utxoTransactions.length; i++) {
+      const tx = utxoTransactions[i];
+      
+      // Add deployment transaction if Safe is not deployed
+      if (!tx.isSafeDeployed && tx.deploymentTransaction) {
+        multicallData.push({
+          target: tx.deploymentTransaction.to,
+          allowFailure: false,
+          callData: tx.deploymentTransaction.data,
+        });
+        console.log(`   - Added deployment for UTXO ${i + 1}: ${tx.predictedSafeAddress}`);
+      }
+      
+      // Add transfer transaction
+      multicallData.push({
+        target: tx.predictedSafeAddress,
         allowFailure: false,
-        callData: deploymentTransaction.data,
-      },
-      // Execute USDC transfer from Safe
-      {
-        target: predictedSafeAddress,
-        allowFailure: false,
-        callData: execTransactionData,
-      },
-    ];
+        callData: tx.execTransactionData,
+      });
+      console.log(`   - Added transfer for UTXO ${i + 1}: ${tx.utxo.amountToRedeem} USDC`);
+    }
 
-    // 🌟 NEW: Execute with gas sponsorship instead of direct wallet transaction
-    console.log("🌟 Executing transaction with gas sponsorship...");
+    console.log("📋 Multicall data prepared:", {
+      totalUTXOs: utxoTransactions.length,
+      numberOfCalls: multicallData.length,
+      calls: multicallData.map((call, index) => ({
+        index: index + 1,
+        target: call.target,
+        allowFailure: call.allowFailure,
+        dataLength: call.callData.length,
+      })),
+    });
+
+    // Execute with gas sponsorship
+    console.log("🌟 Executing UTXO redemption with gas sponsorship...");
 
     const sponsorshipResult = await executeTransactionWithGasSponsorship(
       multicallData,
       {
-        operationType: "payment_redemption",
-        paymentIndex: index,
-        nonce: nonce,
-        stealthAddress: stealthAddress,
-        safeAddress: predictedSafeAddress,
+        operationType: "utxo_redemption",
+        targetAmount: targetAmount,
+        totalAmount: utxoSelection.totalAmount,
+        utxoCount: utxoSelection.selectedUTXOs.length,
+        nonces: allNonces,
         recipientAddress: recipientAddress,
-        tokenAddress: payment.tokenAddress,
-        amount: payment.balance.toString(),
-        symbol: payment.symbol,
+        tokenAddress: utxoSelection.selectedUTXOs[0].tokenAddress, // All should be same token
+        symbol: "USDC",
       }
     );
 
-    console.log("✅ Gas sponsored transaction completed successfully!");
+    console.log("✅ UTXO redemption completed successfully!");
 
-    // Verify the transfer worked (enhanced with sponsorship details)
-    console.log("🔍 Verifying USDT transfer results...");
+    // Verify the transfer worked
+    console.log("🔍 Verifying UTXO redemption results...");
 
     // Check recipient balance
     const recipientBalanceData = encodeFunctionData({
@@ -515,18 +634,18 @@ const processSingleRedemptionWithSponsorship = async (
     });
 
     const recipientBalanceResult = await publicClient.call({
-      to: payment.tokenAddress,
+      to: utxoSelection.selectedUTXOs[0].tokenAddress,
       data: recipientBalanceData,
     });
 
     const recipientBalance = BigInt(recipientBalanceResult.data || "0x0");
     const recipientBalanceFormatted = (
-      Number(recipientBalance) / Math.pow(10, payment.decimals)
-    ).toFixed(2);
+      Number(recipientBalance) / Math.pow(10, 6)
+    ).toFixed(6);
 
-    console.log("✅ Gas sponsored transfer verification:", {
+    console.log("✅ UTXO redemption verification:", {
       recipient: recipientAddress,
-      receivedAmount: `${recipientBalanceFormatted} ${payment.symbol}`,
+      receivedAmount: `${recipientBalanceFormatted} USDC`,
       transactionHash: sponsorshipResult.txHash,
       explorerUrl: sponsorshipResult.explorerUrl,
       sponsorAddress: sponsorshipResult.sponsorDetails.sponsorAddress,
@@ -536,23 +655,22 @@ const processSingleRedemptionWithSponsorship = async (
 
     return {
       success: true,
+      utxoSelection,
       multicallData,
-      deploymentTransaction,
-      safeTransaction,
-      signature,
       txHash: sponsorshipResult.txHash,
       gasUsed: sponsorshipResult.gasUsed,
       gasCost: sponsorshipResult.gasCost,
       explorerUrl: sponsorshipResult.explorerUrl,
       sponsorDetails: sponsorshipResult.sponsorDetails,
       summary: {
-        stealthAddress,
-        safeAddress: predictedSafeAddress,
+        targetAmount,
+        totalAmount: utxoSelection.totalAmount,
+        utxoCount: utxoSelection.selectedUTXOs.length,
         recipient: recipientAddress,
         multicallCalls: multicallData.length,
         executed: true,
         txHash: sponsorshipResult.txHash,
-        recipientBalance: `${recipientBalanceFormatted} ${payment.symbol}`,
+        recipientBalance: `${recipientBalanceFormatted} USDC`,
         sponsoredBy: sponsorshipResult.sponsorDetails.sponsorAddress,
         gasUsed: sponsorshipResult.gasUsed,
         explorerUrl: sponsorshipResult.explorerUrl,
@@ -565,7 +683,8 @@ const processSingleRedemptionWithSponsorship = async (
   }
 };
 
-const finalResult = await processSingleRedemptionWithSponsorship();
+// Execute UTXO-style redemption for target amount
+const finalResult = await processUTXORedemptionWithSponsorship(0.0003); // Target 0.0003 USDC
 console.log(finalResult);
 
 console.log("finalResult", finalResult);
