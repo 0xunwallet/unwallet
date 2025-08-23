@@ -32,7 +32,7 @@ const recipientAddress = "0xc6377415Ee98A7b71161Ee963603eE52fF7750FC";
 const username = process.env.AGENT_USERNAME || "agent1";
 
 // Function to fetch balance data from API
-const fetchBalanceData = async () => {
+export const fetchBalanceData = async () => {
   try {
     console.log("📡 Fetching balance data from API...");
     console.log("🔗 URL:", `${BACKEND_URL}/api/user/${username}/funding-stats`);
@@ -151,7 +151,7 @@ export const publicClient = createPublicClient({
 const STEALTH_ADDRESS_GENERATION_MESSAGE =
   "STEALTH_ADDRESS_GENERATION_ZZZZZ_SEI_TESTNET";
 
-const generateInitialKeysOnClient = async (uniqueNonces) => {
+export const generateInitialKeysOnClient = async (uniqueNonces) => {
   // STEP 1: Create a deterministic message for signing
   const message = STEALTH_ADDRESS_GENERATION_MESSAGE;
 
@@ -257,7 +257,7 @@ import {
 
 
 
-const processUTXORedemptionWithSponsorship = async (targetAmount = 0.0003) => {
+export const processUTXORedemptionWithSponsorship = async (targetAmount = 0.0003) => {
   // Fetch balance data from API
   const balanceData = await fetchBalanceData();
   
@@ -589,8 +589,7 @@ const processUTXORedemptionWithSponsorship = async (targetAmount = 0.0003) => {
 
 
 
-// Execute UTXO-style redemption for target amount
-const finalResult = await processUTXORedemptionWithSponsorship(0.0003); // Target 0.0003 USDC
-console.log(finalResult);
-
-console.log("finalResult", finalResult);
+// Test code removed - this was causing the function to run on import
+// Uncomment the lines below to test the UTXO redemption functionality
+// const finalResult = await processUTXORedemptionWithSponsorship(0.0003); // Target 0.0003 USDC
+// console.log(finalResult);
