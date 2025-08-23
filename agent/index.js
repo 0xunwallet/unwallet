@@ -1,26 +1,21 @@
 import { config } from "dotenv";
 import express from "express";
 import cors from "cors";
-import {
-  validatePaymentRequest,
-  getFundedAddresses,
-  selectOptimalUTXOs,
-  prepareTransactionData,
-  executePayment,
-  formatPaymentResponse,
-  createDynamicPaymentMiddleware
-} from "./helpers/index.js";
+import { paymentMiddleware } from "x402-express";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 config();
 
 const facilitatorUrl = process.env.FACILITATOR_URL;
 const payTo = process.env.ADDRESS;
-const agentQueryUrl = process.env.AGENT_QUERY_URL;
-const agentUsername = process.env.AGENT_USERNAME;
 
-if (!facilitatorUrl || !payTo || !agentQueryUrl || !agentUsername) {
+// Initialize Gemini AI
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+if (!facilitatorUrl || !payTo) {
   console.error(
-    "Missing required environment variables: FACILITATOR_URL, ADDRESS, AGENT_QUERY_URL, AGENT_USERNAME"
+    "Missing required environment variables: FACILITATOR_URL, ADDRESS"
   );
   process.exit(1);
 }
@@ -34,11 +29,103 @@ app.use(
   })
 );
 
-// Parse JSON requests
-app.use(express.json());
+async function getSafeAddress() {
+  try {
+    const data = await fetch(
+      `${process.env.AGENT_QUERY_URL}/api/user/${process.env.AGENT_USERNAME}/stealth`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chainId: 1328,
+          tokenAddress: "0x4fCF1784B31630811181f670Aea7A7bEF803eaED",
+          tokenAmount: "1",
+        }),
+      }
+    );
 
-// Apply dynamic payment middleware to specific routes only
-app.use("/weather", createDynamicPaymentMiddleware(facilitatorUrl));
+    const json = await data.json();
+    console.log("Server response:", json);
+
+    if (!json.success) {
+      throw new Error(`Server error: ${json.error || "Unknown error"}`);
+    }
+
+    // Try to get Safe address first, fallback to stealth address if Safe prediction failed
+    const safeAddress = json.data?.safeAddress?.address;
+
+    if (safeAddress && safeAddress !== "") {
+      console.log("Using Safe address:", safeAddress);
+      return safeAddress;
+    } else {
+      throw new Error("No valid address found in response");
+    }
+  } catch (error) {
+    console.error("Failed to get payment address:", error.message);
+    throw error;
+  }
+}
+
+// Create a dynamic payment middleware that gets fresh address on each request
+const dynamicPaymentMiddleware = async (req, res, next) => {
+  try {
+    const paymentAddress = await getSafeAddress();
+
+    // Create payment middleware with the fresh address
+    const middleware = paymentMiddleware(
+      paymentAddress,
+      {
+        // "/": {
+        //   price: "$0.01",
+        //   network: "sei-testnet",
+        //   config: {
+        //     description: "Hello World endpoint",
+        //     mimeType: "application/json",
+        //   },
+        // },
+        "/weather": {
+          price: "$0.01",
+          network: "sei-testnet",
+          config: {
+            description: "Weather data access",
+            mimeType: "application/json",
+          },
+        },
+        "/chat/pro": {
+          price: "$0.01",
+          network: "sei-testnet",
+          config: {
+            description: "Chat endpoint with Gemini AI (Pro Mode)",
+            mimeType: "application/json",
+          },
+        },
+      },
+      {
+        url: facilitatorUrl,
+      }
+    );
+
+    // Apply the middleware
+    middleware(req, res, next);
+  } catch (error) {
+    console.error("Failed to setup payment middleware:", error.message);
+    res.status(500).json({
+      error: "Payment service unavailable",
+      message: error.message,
+    });
+  }
+};
+
+// Apply dynamic payment middleware
+app.use(dynamicPaymentMiddleware);
+
+app.get("/", (req, res) => {
+  res.json({
+    message: "Hello World",
+  });
+});
 
 app.get("/weather", (req, res) => {
   console.log("🌤️ Serving weather data to paid user");
@@ -53,59 +140,89 @@ app.get("/weather", (req, res) => {
   });
 });
 
+app.get("/chat", async (req, res) => {
+  const question = req.query.question;
+  const proMode = req.query.pro === "true";
+
+  if (!question) {
+    return res.status(400).json({
+      error: "Question parameter is required",
+      message: "Please provide a question using ?question=your_question",
+    });
+  }
+
+  console.log(`💬 Chat request received: "${question}" (Pro Mode: ${proMode})`);
+
+  // If pro mode is enabled, let the payment middleware handle it
+  if (proMode) {
+    // The payment middleware will handle this request
+    return;
+  }
+
+  // Free mode - direct API call without payment
+  try {
+    // Generate response using Gemini AI
+    const result = await model.generateContent(question);
+    const response = await result.response;
+    const answer = response.text();
+
+    res.json({
+      question: question,
+      answer: answer,
+      timestamp: new Date().toISOString(),
+      type: "gemini_ai_response",
+      mode: "free",
+    });
+  } catch (error) {
+    console.error("❌ Gemini AI error:", error);
+    res.status(500).json({
+      error: "Failed to generate AI response",
+      message: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+// Pro mode chat endpoint with payment middleware
+app.get("/chat/pro", async (req, res) => {
+  const question = req.query.question;
+
+  if (!question) {
+    return res.status(400).json({
+      error: "Question parameter is required",
+      message: "Please provide a question using ?question=your_question",
+    });
+  }
+
+  console.log(`💬 Pro Chat request received: "${question}"`);
+
+  try {
+    // Generate response using Gemini AI with advanced agent prompt
+    const enhancedPrompt = `${question}\n\n[Internal Instruction: Answer like an advanced AI agent, not a normal response. Be more sophisticated, detailed, and professional in your response.]`;
+    const result = await model.generateContent(enhancedPrompt);
+    const response = await result.response;
+    const answer = response.text();
+
+    res.json({
+      question: question,
+      answer: answer,
+      timestamp: new Date().toISOString(),
+      type: "gemini_ai_response",
+      mode: "pro",
+    });
+  } catch (error) {
+    console.error("❌ Gemini AI error:", error);
+    res.status(500).json({
+      error: "Failed to generate AI response",
+      message: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
 // Add health endpoint for testing
 app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
-
-/**
- * @title Pay API Endpoint
- * @description Processes payments using UTXO optimization system
- * @route POST /pay
- * @body {string} toAddress - Recipient address (required)
- * @body {number} amount - Amount to send in USDC (required)
- * @body {string} tokenAddress - Token address (optional, defaults to USDC)
- * @returns {Object} Payment result with transaction details
- */
-app.post("/pay", async (req, res) => {
-  try {
-    console.log("💰 Processing payment request:", req.body);
-    
-    // Step 1: Validate request
-    const { toAddress, amount, tokenAddress } = await validatePaymentRequest(req);
-    const targetTokenAddress = tokenAddress || "0x4fCF1784B31630811181f670Aea7A7bEF803eaED";
-    
-    console.log("📋 Payment parameters:");
-    console.log(`   To: ${toAddress}`);
-    console.log(`   Amount: ${amount} USDC`);
-    console.log(`   Token: ${targetTokenAddress}`);
-    
-    // Step 2: Get funded addresses
-    const fundedAddresses = await getFundedAddresses();
-    
-    // Step 3: Select optimal UTXOs
-    const utxoSelection = await selectOptimalUTXOs(fundedAddresses, amount);
-    
-    // Step 4: Prepare transaction data
-    const multicallData = await prepareTransactionData(utxoSelection, toAddress, targetTokenAddress, amount);
-    
-    // Step 5: Execute payment
-    const sponsorshipResult = await executePayment(multicallData, utxoSelection, toAddress, amount, targetTokenAddress, agentQueryUrl, agentUsername);
-    
-    // Step 6: Return response
-    const response = formatPaymentResponse(sponsorshipResult, utxoSelection, toAddress, amount, multicallData);
-    res.json(response);
-    
-  } catch (error) {
-    console.error("❌ Payment failed:", error);
-    
-    res.status(500).json({
-      success: false,
-      error: "Payment processing failed",
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
 });
 
 app.listen(4021, () => {
@@ -115,8 +232,10 @@ app.listen(4021, () => {
   console.log(`Available endpoints:`);
   console.log(`  • GET /health (free)`);
   console.log(`  • GET /weather (paid: $0.01 USDC)`);
-  console.log(`  • POST /pay (UTXO-optimized payments)`);
-  console.log(`     Example: curl -X POST http://localhost:4021/pay \\`);
-  console.log(`       -H "Content-Type: application/json" \\`);
-  console.log(`       -d '{"toAddress": "0x...", "amount": 0.0001}'`);
+  console.log(
+    `  • GET /chat?question=your_question (free) - Powered by Gemini AI`
+  );
+  console.log(
+    `  • GET /chat/pro?question=your_question (paid: $0.01 USDC) - Powered by Gemini AI`
+  );
 });

@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
+    "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -14,6 +15,7 @@
   "dependencies": {
     "@coinbase/x402": "^0.5.1",
     "@fluidkey/stealth-account-kit": "^1.1.0",
+    "@google/generative-ai": "^0.24.1",
     "@safe-global/protocol-kit": "^6.1.0",
     "@sei-js/x402": "^0.4.1",
     "@sei-js/x402-axios": "^0.3.5",
@@ -26,5 +28,8 @@
     "x402-axios": "^0.5.1",
     "x402-express": "^0.5.3"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
 }
