@@ -18,6 +18,7 @@ npm i -g vercel
    - `FACILITATOR_URL` - X402 facilitator URL
    - `ADDRESS` - Payment address
    - `AGENT_QUERY_URL` - Backend API URL
+   - `AGENT2_URL` - Agent2 deployment URL (e.g., https://your-agent2.vercel.app)
 
 ### Deployment Steps
 

@@ -18,6 +18,7 @@ config();
 
 const facilitatorUrl = process.env.FACILITATOR_URL;
 const payTo = process.env.ADDRESS;
+const agent2Url = process.env.AGENT2_URL || "https://unwallet-agent2.vercel.app";
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API);
@@ -83,7 +84,7 @@ async function queryAgent2Payment(question) {
 
     try {
       const response = await axios.get(
-        `http://localhost:4022/chat/pro?question=${encodeURIComponent(
+        `${agent2Url}/chat/pro?question=${encodeURIComponent(
           question
         )}`
       );
@@ -466,7 +467,7 @@ async function getAgent2Response(question, paymentHeaders) {
 
     try {
       const response = await axios.get(
-        `https://unwallet-agent2.vercel.app/chat/pro?question=${encodeURIComponent(
+        `${agent2Url}/chat/pro?question=${encodeURIComponent(
           question
         )}`,
         {
@@ -761,7 +762,7 @@ if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
     console.log(
       `  • GET /chat/pro?question=your_question (paid: $0.01 USDC) - Multi-Agent Response (Agent1 coordinates with Agent2)`
     );
-    console.log(`🤖 Agent2 coordination enabled on port 4022`);
+    console.log(`🤖 Agent2 coordination enabled at ${agent2Url}`);
     console.log(`💰 Payment flow: User → Agent1 ($0.01) → Agent2 ($0.001)`);
   });
 }
