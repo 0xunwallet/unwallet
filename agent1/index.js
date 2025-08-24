@@ -742,19 +742,26 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-app.listen(4021, () => {
-  console.log(`Server listening at http://localhost:4021`);
-  console.log(`Network: Sei Testnet`);
-  console.log(`Facilitator: ${facilitatorUrl}`);
-  console.log(`Available endpoints:`);
-  console.log(`  • GET /health (free)`);
-  console.log(`  • GET /weather (paid: $0.01 USDC)`);
-  console.log(
-    `  • GET /chat?question=your_question (free) - Powered by Gemini AI`
-  );
-  console.log(
-    `  • GET /chat/pro?question=your_question (paid: $0.01 USDC) - Multi-Agent Response (Agent1 coordinates with Agent2)`
-  );
-  console.log(`🤖 Agent2 coordination enabled on port 4022`);
-  console.log(`💰 Payment flow: User → Agent1 ($0.01) → Agent2 ($0.001)`);
-});
+// Export the app for Vercel
+export default app;
+
+// Start server only if not in Vercel environment
+if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
+  const port = process.env.PORT || 4021;
+  app.listen(port, () => {
+    console.log(`Server listening at http://localhost:${port}`);
+    console.log(`Network: Sei Testnet`);
+    console.log(`Facilitator: ${facilitatorUrl}`);
+    console.log(`Available endpoints:`);
+    console.log(`  • GET /health (free)`);
+    console.log(`  • GET /weather (paid: $0.01 USDC)`);
+    console.log(
+      `  • GET /chat?question=your_question (free) - Powered by Gemini AI`
+    );
+    console.log(
+      `  • GET /chat/pro?question=your_question (paid: $0.01 USDC) - Multi-Agent Response (Agent1 coordinates with Agent2)`
+    );
+    console.log(`🤖 Agent2 coordination enabled on port 4022`);
+    console.log(`💰 Payment flow: User → Agent1 ($0.01) → Agent2 ($0.001)`);
+  });
+}
