@@ -5,6 +5,9 @@ export const CHAIN_IDS = {
   SEI_TESTNET: 1328,
 } as const;
 
+export const DEFAULT_RPC_URL = "https://quiet-crimson-ensemble.sei-atlantic.quiknode.pro/69718db72dcf9d1828053e82dbeeeb283319782e";
+
+
 // Define Sei Testnet chain
 export const SEI_TESTNET = defineChain({
   id: CHAIN_IDS.SEI_TESTNET,
@@ -17,16 +20,16 @@ export const SEI_TESTNET = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ['https://evm-rpc-testnet.sei-apis.com'],
+      http: [DEFAULT_RPC_URL],
     },
     public: {
-      http: ['https://evm-rpc-testnet.sei-apis.com'],
+      http: [DEFAULT_RPC_URL],
     },
   },
   blockExplorers: {
     default: { 
       name: 'Sei Trace', 
-      url: 'https://seitrace.com/?chain=atlantic-2' 
+      url: DEFAULT_RPC_URL 
     },
   },
   testnet: true,
@@ -35,8 +38,6 @@ export const SEI_TESTNET = defineChain({
 // Default chain configuration
 export const DEFAULT_CHAIN = SEI_TESTNET;
 export const DEFAULT_CHAIN_ID = DEFAULT_CHAIN.id;
-export const DEFAULT_RPC_URL = DEFAULT_CHAIN.rpcUrls.default.http[0];
-
 // Supported chains array - Sei Testnet
 export const SUPPORTED_CHAINS = [CHAIN_IDS.SEI_TESTNET];
 
@@ -47,7 +48,7 @@ export const CHAIN_NAMES: Record<number, string> = {
 
 // RPC URL mapping - Sei Testnet
 export const RPC_URLS: Record<number, string> = {
-  [CHAIN_IDS.SEI_TESTNET]: 'https://evm-rpc-testnet.sei-apis.com',
+  [CHAIN_IDS.SEI_TESTNET]: DEFAULT_RPC_URL,
 };
 
 // Native currency mapping - Sei Testnet

@@ -1,7 +1,7 @@
 import Safe from '@safe-global/protocol-kit';
 import { Logger } from '../utils';
 import { createPublicClient, http, isAddress, formatUnits } from 'viem';
-import { SEI_TESTNET, CHAIN_IDS } from '../config/chains';
+import { SEI_TESTNET, CHAIN_IDS, DEFAULT_RPC_URL } from '../config/chains';
 import { SAFE_CONTRACTS_MAP } from '../config/safeContracts';
 
 // ERC20 Balance ABI
@@ -39,7 +39,7 @@ export class SafeService {
   private readonly chainId: number;
   private readonly rpcUrl: string;
 
-  constructor(chainId: number = CHAIN_IDS.SEI_TESTNET, rpcUrl: string = 'https://evm-rpc-testnet.sei-apis.com') {
+  constructor(chainId: number = CHAIN_IDS.SEI_TESTNET, rpcUrl: string = DEFAULT_RPC_URL) {
     this.chainId = chainId;
     this.rpcUrl = rpcUrl;
   }
