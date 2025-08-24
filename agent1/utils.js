@@ -22,6 +22,11 @@ import {
   USDC_ABI,
   safeSignTypedData,
 } from "./safe/safe-utils.js";
+import {
+  createBatchBalanceCalls,
+  executeMulticall3,
+  decodeBalanceResults,
+} from "./helpers/multicall3.js";
 import Safe from "@safe-global/protocol-kit";
 import dotenv from "dotenv";
 dotenv.config();
@@ -60,28 +65,28 @@ export const fetchBalanceData = async () => {
     
     const fundedAddresses = data.data.fundedAddresses;
     
-    console.log("🔍 Checking actual USDC balance for each Safe...");
+    console.log("🔍 Checking actual USDC balance for all Safes using Multicall3...");
     
-    // Check actual balance for each Safe and filter out zero balances
+    // Extract Safe addresses for batch balance check
+    const safeAddresses = fundedAddresses.map(item => item.safeAddress);
+    console.log(`📊 Checking balance for ${safeAddresses.length} Safes in batch`);
+    
+    // Create batch balance calls
+    const balanceCalls = createBatchBalanceCalls(safeAddresses, "0x4fCF1784B31630811181f670Aea7A7bEF803eaED", USDC_ABI);
+    
+    // Execute multicall for balances
+    const balanceResults = await executeMulticall3(publicClient, balanceCalls);
+    const decodedBalances = decodeBalanceResults(balanceResults, USDC_ABI);
+    
+    // Combine results and filter out zero balances
     const balanceDataWithActualBalance = [];
     
-    for (const item of fundedAddresses) {
-      try {
-        console.log(`🔍 Checking balance for Safe: ${item.safeAddress} (nonce: ${item.nonce})`);
-        
-        // Check USDC balance of the Safe
-        const balanceData = encodeFunctionData({
-          abi: USDC_ABI,
-          functionName: "balanceOf",
-          args: [item.safeAddress],
-        });
-
-        const balanceResult = await publicClient.call({
-          to: item.tokenAddress,
-          data: balanceData,
-        });
-
-        const actualBalance = BigInt(balanceResult.data || "0x0");
+    for (let i = 0; i < fundedAddresses.length; i++) {
+      const item = fundedAddresses[i];
+      const balanceResult = decodedBalances[i];
+      
+      if (balanceResult.success) {
+        const actualBalance = balanceResult.balance;
         const actualBalanceFormatted = Number(actualBalance) / Math.pow(10, 6); // USDC has 6 decimals
         
         console.log(`💰 Safe ${item.safeAddress} has ${actualBalanceFormatted} USDC`);
@@ -109,9 +114,8 @@ export const fetchBalanceData = async () => {
         } else {
           console.log(`❌ Safe ${item.safeAddress} has zero balance, skipping`);
         }
-      } catch (error) {
-        console.error(`❌ Error checking balance for Safe ${item.safeAddress}:`, error);
-        // Continue with other Safes even if one fails
+      } else {
+        console.log(`❌ Failed to get balance for Safe ${item.safeAddress}`);
       }
     }
 
