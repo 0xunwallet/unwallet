@@ -466,7 +466,7 @@ async function getAgent2Response(question, paymentHeaders) {
 
     try {
       const response = await axios.get(
-        `http://localhost:4022/chat/pro?question=${encodeURIComponent(
+        `https://unwallet-agent2.vercel.app/chat/pro?question=${encodeURIComponent(
           question
         )}`,
         {
