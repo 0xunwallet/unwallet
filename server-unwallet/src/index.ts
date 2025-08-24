@@ -17,6 +17,7 @@ app.set('trust proxy', 1);
 // Global middleware - Allow all origins (no CORS restrictions)
 app.use(cors({
     origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true
 }));
 
