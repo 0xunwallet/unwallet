@@ -1,6 +1,6 @@
 import { createPublicClient, http } from 'viem';
 import { Logger } from './logger';
-import { SEI_TESTNET, CHAIN_IDS } from '../config/chains';
+import { SEI_TESTNET, BASE_SEPOLIA, CHAIN_IDS } from '../config/chains';
 
 // ERC20 Decimals ABI for reading token decimals
 const ERC20_DECIMALS_ABI = [
@@ -46,6 +46,12 @@ function initializeClients() {
   publicClients.set(CHAIN_IDS.SEI_TESTNET, createPublicClient({
     chain: SEI_TESTNET,
     transport: http('https://evm-rpc-testnet.sei-apis.com'),
+  }));
+
+  // Base Sepolia
+  publicClients.set(CHAIN_IDS.BASE_SEPOLIA, createPublicClient({
+    chain: BASE_SEPOLIA,
+    transport: http('https://sepolia.base.org'),
   }));
 
   Logger.info('TokenUtils initialized with blockchain clients', {
@@ -122,7 +128,8 @@ export async function getTokenSymbol(tokenAddress: string, chainId: number): Pro
     if (tokenAddress === '0x0000000000000000000000000000000000000000') {
       switch (chainId) {
         case CHAIN_IDS.SEI_TESTNET: return 'SEI';
-        default: return 'SEI';
+        case CHAIN_IDS.BASE_SEPOLIA: return 'ETH';
+        default: return 'ETH';
       }
     }
 
@@ -157,7 +164,8 @@ export async function getTokenName(tokenAddress: string, chainId: number): Promi
     if (tokenAddress === '0x0000000000000000000000000000000000000000') {
       switch (chainId) {
         case CHAIN_IDS.SEI_TESTNET: return 'SEI';
-        default: return 'SEI';
+        case CHAIN_IDS.BASE_SEPOLIA: return 'Ether';
+        default: return 'Ether';
       }
     }
 
@@ -211,6 +219,8 @@ export function getRpcUrlForChain(chainId: number): string {
   switch (chainId) {
     case CHAIN_IDS.SEI_TESTNET:
       return 'https://evm-rpc-testnet.sei-apis.com';
+    case CHAIN_IDS.BASE_SEPOLIA:
+      return 'https://sepolia.base.org';
     default:
       throw new Error(`Unsupported chain ID: ${chainId}`);
   }
@@ -223,8 +233,10 @@ export function getNativeCurrencySymbol(chainId: number): string {
   switch (chainId) {
     case CHAIN_IDS.SEI_TESTNET:
       return 'SEI';
+    case CHAIN_IDS.BASE_SEPOLIA:
+      return 'ETH';
     default:
-      return 'SEI';
+      return 'ETH';
   }
 }
 

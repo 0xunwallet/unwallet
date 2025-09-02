@@ -1,7 +1,7 @@
 import Safe from '@safe-global/protocol-kit';
 import { Logger } from '../utils';
 import { createPublicClient, http, isAddress, formatUnits } from 'viem';
-import { SEI_TESTNET, CHAIN_IDS, DEFAULT_RPC_URL } from '../config/chains';
+import { SEI_TESTNET, BASE_SEPOLIA, CHAIN_IDS, DEFAULT_RPC_URL } from '../config/chains';
 import { SAFE_CONTRACTS_MAP } from '../config/safeContracts';
 
 // ERC20 Balance ABI
@@ -416,7 +416,8 @@ export class SafeService {
   // Helper method to get human-readable chain name
   private getChainName(): string {
     const chainNames: Record<number, string> = {
-      [CHAIN_IDS.SEI_TESTNET]: 'Sei Testnet'
+      [CHAIN_IDS.SEI_TESTNET]: 'Sei Testnet',
+      [CHAIN_IDS.BASE_SEPOLIA]: 'Base Sepolia'
     };
     
     return chainNames[this.chainId] || `Chain ${this.chainId}`;
@@ -425,7 +426,8 @@ export class SafeService {
   // Get supported networks (informational)
   static getSupportedNetworks(): Array<{ chainId: number; name: string; rpcUrl: string }> {
     return [
-      { chainId: CHAIN_IDS.SEI_TESTNET, name: 'Sei Testnet', rpcUrl: 'https://evm-rpc-testnet.sei-apis.com' }
+      { chainId: CHAIN_IDS.SEI_TESTNET, name: 'Sei Testnet', rpcUrl: 'https://evm-rpc-testnet.sei-apis.com' },
+      { chainId: CHAIN_IDS.BASE_SEPOLIA, name: 'Base Sepolia', rpcUrl: 'https://sepolia.base.org' }
     ];
   }
 
@@ -449,7 +451,7 @@ export class SafeService {
 
       // Create public client for blockchain interactions
       const publicClient = createPublicClient({
-        chain: SEI_TESTNET, // Currently only supporting Sei Testnet
+        chain: this.chainId === CHAIN_IDS.BASE_SEPOLIA ? BASE_SEPOLIA : SEI_TESTNET,
         transport: http(this.rpcUrl)
       });
 
@@ -547,7 +549,7 @@ export class SafeService {
 
       // Create public client for blockchain interactions
       const publicClient = createPublicClient({
-        chain: SEI_TESTNET, // Currently only supporting Sei Testnet
+        chain: this.chainId === CHAIN_IDS.BASE_SEPOLIA ? BASE_SEPOLIA : SEI_TESTNET,
         transport: http(this.rpcUrl)
       });
 

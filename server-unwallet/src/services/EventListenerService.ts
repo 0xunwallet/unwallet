@@ -1,7 +1,7 @@
 import { createPublicClient, http, parseUnits, formatUnits, isAddress } from 'viem';
 import { EventEmitter } from 'events';
 import { Logger } from '../utils';
-import { SEI_TESTNET, CHAIN_IDS } from '../config/chains';
+import { SEI_TESTNET, BASE_SEPOLIA, CHAIN_IDS } from '../config/chains';
 
 // ERC20 Decimals ABI for reading token decimals
 const ERC20_DECIMALS_ABI = [
@@ -62,6 +62,12 @@ export class EventListenerService extends EventEmitter {
     this.publicClients.set(CHAIN_IDS.SEI_TESTNET, createPublicClient({
       chain: SEI_TESTNET,
       transport: http('https://evm-rpc-testnet.sei-apis.com'),
+    }));
+
+    // Base Sepolia
+    this.publicClients.set(CHAIN_IDS.BASE_SEPOLIA, createPublicClient({
+      chain: BASE_SEPOLIA,
+      transport: http('https://sepolia.base.org'),
     }));
 
     Logger.info('EventListenerService initialized with blockchain clients', {
