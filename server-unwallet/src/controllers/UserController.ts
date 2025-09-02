@@ -442,6 +442,38 @@ export class UserController {
         },
       ];
 
+      // Preflight: simulate with allowFailure=true to surface inner-call errors cross-chain
+      try {
+        const preflightArgs = [
+          (multicallData as any[]).map((c: any) => ({
+            target: c.target,
+            allowFailure: true,
+            callData: c.callData,
+          }))
+        ];
+
+        const preflight = await publicClient.simulateContract({
+          address: MULTICALL3_ADDRESS,
+          abi: MULTICALL3_ABI,
+          functionName: 'aggregate3',
+          args: preflightArgs as any,
+          account: sponsorAccount.address,
+        });
+
+        const results = (preflight.result as any[]) || [];
+        const failed = results
+          .map((r: any, i: number) => ({ index: i, success: r.success, target: (multicallData as any[])[i]?.target }))
+          .filter((r: any) => !r.success);
+
+        if (failed.length > 0) {
+          Logger.error('Multicall preflight detected failing inner calls', { failed, chainId: selectedChainId });
+          ResponseUtil.error(res, `One or more inner calls would fail: ${failed.map((f: any) => f.target).join(', ')}`, 400);
+          return;
+        }
+      } catch (simErr) {
+        Logger.warn('Multicall preflight simulation failed, proceeding to execute', { error: (simErr as Error).message });
+      }
+
       // Execute the multicall transaction
       const txHash = await sponsorWallet.writeContract({
         address: MULTICALL3_ADDRESS,
