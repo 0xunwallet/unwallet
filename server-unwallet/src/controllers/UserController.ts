@@ -382,36 +382,10 @@ export class UserController {
         startsWithOx: SPONSOR_PRIVATE_KEY.startsWith('0x')
       });
 
-      // Resolve chain to use (default to configured default)
-      const selectedChainId: number = typeof requestedChainId === 'number' ? requestedChainId : DEFAULT_CHAIN_ID;
-      if (!SUPPORTED_CHAINS.includes(selectedChainId as any)) {
-        throw new Error(`Unsupported chain ID for sponsorship: ${selectedChainId}`);
-      }
-
-      const selectedChain = selectedChainId === CHAIN_IDS.BASE_SEPOLIA ? BASE_SEPOLIA : SEI_TESTNET;
-      const selectedRpcUrl = this.getRpcUrlForChain(selectedChainId);
-
-      // Create sponsor account and clients
+      // Create sponsor account
       const sponsorAccount = privateKeyToAccount(formattedPrivateKey as `0x${string}`);
-      const sponsorWallet = createWalletClient({
-        account: sponsorAccount,
-        chain: selectedChain,
-        transport: http(selectedRpcUrl),
-      });
 
-      const publicClient = createPublicClient({
-        chain: selectedChain,
-        transport: http(selectedRpcUrl),
-      });
-
-      Logger.info('Executing gas sponsored transaction with multicall', {
-        username,
-        sponsorAddress: sponsorAccount.address,
-        multicallCallsCount: multicallData.length,
-        metadata: metadata.operationType || 'unknown'
-      });
-
-      // Multicall3 contract details
+      // Multicall3 contract details (declared before any usage)
       const MULTICALL3_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
       const MULTICALL3_ABI = [
         {
@@ -442,37 +416,72 @@ export class UserController {
         },
       ];
 
-      // Preflight: simulate with allowFailure=true to surface inner-call errors cross-chain
-      try {
-        const preflightArgs = [
-          (multicallData as any[]).map((c: any) => ({
-            target: c.target,
-            allowFailure: true,
-            callData: c.callData,
-          }))
-        ];
+      // Auto-select chain if not provided: try preflight on all supported chains and pick the first that passes
+      const candidateChainIds: number[] = typeof requestedChainId === 'number' ? [requestedChainId] : (SUPPORTED_CHAINS as number[]);
+      let selectedChainId: number | null = null;
+      let selectedChain: any = null;
+      let selectedRpcUrl: string = '';
+      let publicClient: any = null;
+      let sponsorWallet: any = null;
 
-        const preflight = await publicClient.simulateContract({
-          address: MULTICALL3_ADDRESS,
-          abi: MULTICALL3_ABI,
-          functionName: 'aggregate3',
-          args: preflightArgs as any,
-          account: sponsorAccount.address,
-        });
+      const preflightArgsFor = (data: any[]) => [
+        data.map((c: any) => ({ target: c.target, allowFailure: true, callData: c.callData }))
+      ];
 
-        const results = (preflight.result as any[]) || [];
-        const failed = results
-          .map((r: any, i: number) => ({ index: i, success: r.success, target: (multicallData as any[])[i]?.target }))
-          .filter((r: any) => !r.success);
+      const chainObjFor = (id: number) => id === CHAIN_IDS.BASE_SEPOLIA ? BASE_SEPOLIA : SEI_TESTNET;
 
-        if (failed.length > 0) {
-          Logger.error('Multicall preflight detected failing inner calls', { failed, chainId: selectedChainId });
-          ResponseUtil.error(res, `One or more inner calls would fail: ${failed.map((f: any) => f.target).join(', ')}`, 400);
-          return;
+      const failuresByChain: Record<number, { index: number; target: string }[]> = {};
+
+      for (const cid of candidateChainIds) {
+        if (!SUPPORTED_CHAINS.includes(cid as any)) continue;
+        const chainObj = chainObjFor(cid);
+        const rpcUrl = this.getRpcUrlForChain(cid);
+        const tmpPublic = createPublicClient({ chain: chainObj, transport: http(rpcUrl) });
+        try {
+          const sim = await tmpPublic.simulateContract({
+            address: MULTICALL3_ADDRESS,
+            abi: MULTICALL3_ABI,
+            functionName: 'aggregate3',
+            args: preflightArgsFor(multicallData) as any,
+            account: sponsorAccount.address,
+          });
+          const results = (sim.result as any[]) || [];
+          const failed = results
+            .map((r: any, i: number) => ({ index: i, success: r.success, target: (multicallData as any[])[i]?.target }))
+            .filter((r: any) => !r.success)
+            .map((r: any) => ({ index: r.index, target: r.target }));
+          failuresByChain[cid] = failed;
+          if (failed.length === 0 && selectedChainId === null) {
+            selectedChainId = cid;
+            selectedChain = chainObj;
+            selectedRpcUrl = rpcUrl;
+            publicClient = tmpPublic;
+          }
+        } catch (e) {
+          failuresByChain[cid] = [{ index: -1, target: 'simulate_failed' }];
         }
-      } catch (simErr) {
-        Logger.warn('Multicall preflight simulation failed, proceeding to execute', { error: (simErr as Error).message });
       }
+
+      if (selectedChainId === null) {
+        Logger.error('Multicall preflight failed for all candidate chains', { failuresByChain });
+        ResponseUtil.error(res, `All candidate chains would fail: ${JSON.stringify(failuresByChain)}`, 400);
+        return;
+      }
+
+      // Initialize sponsor wallet on the selected chain (publicClient already created)
+      sponsorWallet = createWalletClient({ account: sponsorAccount, chain: selectedChain, transport: http(selectedRpcUrl) });
+
+      Logger.info('Executing gas sponsored transaction with multicall', {
+        username,
+        sponsorAddress: sponsorAccount.address,
+        multicallCallsCount: multicallData.length,
+        metadata: metadata.operationType || 'unknown'
+      });
+
+      // Multicall3 contract details
+
+      // Preflight: simulate with allowFailure=true to surface inner-call errors cross-chain
+      // Note: preflight already performed during auto-selection
 
       // Execute the multicall transaction
       const txHash = await sponsorWallet.writeContract({
