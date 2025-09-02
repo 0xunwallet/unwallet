@@ -5,7 +5,7 @@ import { SupabaseService } from '../services/SupabaseService';
 import { ServiceStealthAddressResponse } from '../services/StealthAddressService';
 import { PaymentDetected } from '../services/EventListenerService';
 import { ResponseUtil, Logger } from '../utils';
-import { CHAIN_IDS } from '../config/chains';
+import { CHAIN_IDS, RPC_URLS, DEFAULT_CHAIN_ID, DEFAULT_RPC_URL } from '../config/chains';
 import { 
   SingleStealthAddressResponse, 
   SafeAddressInfo, 
@@ -35,12 +35,7 @@ export class StealthAddressController {
 
   // Get RPC URL for a specific chain ID
   private getRpcUrlForChain(chainId: number): string {
-    const rpcUrls: Record<number, string> = {
-      [CHAIN_IDS.SEI_TESTNET]: 'https://evm-rpc-testnet.sei-apis.com', // Sei Testnet
-      [CHAIN_IDS.BASE_SEPOLIA]: 'https://sepolia.base.org', // Base Sepolia
-    };
-    
-    return rpcUrls[chainId] || 'https://evm-rpc-testnet.sei-apis.com'; // Default to Sei Testnet
+    return RPC_URLS[chainId] ?? RPC_URLS[DEFAULT_CHAIN_ID] ?? DEFAULT_RPC_URL;
   }
 
   // Setup event listeners for payment detection

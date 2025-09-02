@@ -5,7 +5,7 @@ import { StealthAddressService } from '../services/StealthAddressService';
 import { SafeService } from '../services/SafeService';
 import { UserRegistrationRequest, UserRegistrationResponse, AuthenticatedRequest, SafeAddressInfo } from '../types';
 import { ResponseUtil, Logger } from '../utils';
-import { CHAIN_IDS } from '../config/chains';
+import { CHAIN_IDS, RPC_URLS, DEFAULT_CHAIN_ID, DEFAULT_RPC_URL, SEI_TESTNET, BASE_SEPOLIA, SUPPORTED_CHAINS } from '../config/chains';
 
 export class UserController {
   private userService: UserService;
@@ -20,12 +20,7 @@ export class UserController {
 
   // Get RPC URL for a specific chain ID
   private getRpcUrlForChain(chainId: number): string {
-    const rpcUrls: Record<number, string> = {
-      [CHAIN_IDS.SEI_TESTNET]: 'https://evm-rpc-testnet.sei-apis.com', // Sei Testnet
-      [CHAIN_IDS.BASE_SEPOLIA]: 'https://sepolia.base.org', // Base Sepolia
-    };
-    
-    return rpcUrls[chainId] || 'https://evm-rpc-testnet.sei-apis.com'; // Default to Sei Testnet
+    return RPC_URLS[chainId] ?? RPC_URLS[DEFAULT_CHAIN_ID] ?? DEFAULT_RPC_URL;
   }
 
   // Register new user
@@ -348,7 +343,7 @@ export class UserController {
   gasSponsorshipRequest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { username } = req.params;
-      const { multicallData, metadata = {} } = req.body;
+      const { multicallData, metadata = {}, chainId: requestedChainId } = req.body;
 
       Logger.info('Gas sponsorship request received', {
         username,
@@ -369,8 +364,6 @@ export class UserController {
       // Import required dependencies
       const { createWalletClient, createPublicClient, http, encodeFunctionData } = require('viem');
       const { privateKeyToAccount } = require('viem/accounts');
-      // Import the chain configuration
-      const { SEI_TESTNET } = require('../config/chains');
 
       // Your sponsor private key (make sure this is in your .env file)
       const SPONSOR_PRIVATE_KEY = process.env.SPONSOR_PRIVATE_KEY;
@@ -389,20 +382,26 @@ export class UserController {
         startsWithOx: SPONSOR_PRIVATE_KEY.startsWith('0x')
       });
 
-      // RPC URL for Morph Holesky
-      const RPC_URL = "https://rpc-holesky.morphl2.io";
+      // Resolve chain to use (default to configured default)
+      const selectedChainId: number = typeof requestedChainId === 'number' ? requestedChainId : DEFAULT_CHAIN_ID;
+      if (!SUPPORTED_CHAINS.includes(selectedChainId as any)) {
+        throw new Error(`Unsupported chain ID for sponsorship: ${selectedChainId}`);
+      }
+
+      const selectedChain = selectedChainId === CHAIN_IDS.BASE_SEPOLIA ? BASE_SEPOLIA : SEI_TESTNET;
+      const selectedRpcUrl = this.getRpcUrlForChain(selectedChainId);
 
       // Create sponsor account and clients
       const sponsorAccount = privateKeyToAccount(formattedPrivateKey as `0x${string}`);
       const sponsorWallet = createWalletClient({
         account: sponsorAccount,
-        chain: SEI_TESTNET,
-        transport: http(this.getRpcUrlForChain(SEI_TESTNET.id)),
+        chain: selectedChain,
+        transport: http(selectedRpcUrl),
       });
 
       const publicClient = createPublicClient({
-        chain: SEI_TESTNET,
-        transport: http(this.getRpcUrlForChain(SEI_TESTNET.id)),
+        chain: selectedChain,
+        transport: http(selectedRpcUrl),
       });
 
       Logger.info('Executing gas sponsored transaction with multicall', {
@@ -491,9 +490,11 @@ export class UserController {
         sponsorAddress: sponsorAccount.address,
         message: 'Gas sponsorship executed successfully',
         executionDetails: {
-          chainId: SEI_TESTNET.id,
-          chainName: SEI_TESTNET.name,
-                      explorerUrl: `https://seitrace.com/?chain=atlantic-2&tx=${txHash}`,
+          chainId: selectedChain.id,
+          chainName: selectedChain.name,
+          explorerUrl: selectedChainId === CHAIN_IDS.BASE_SEPOLIA
+            ? `https://sepolia.basescan.org/tx/${txHash}`
+            : `https://seitrace.com/?chain=atlantic-2&tx=${txHash}`,
           multicallCallsExecuted: multicallData.length,
           status: receipt.status === 'success' ? 'success' : 'failed'
         }

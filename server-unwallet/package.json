@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@fluidkey/stealth-account-kit": "^1.1.0",
-    "@safe-global/protocol-kit": "^6.0.5",
+    "@safe-global/protocol-kit": "^6.1.0",
     "@safe-global/safe-core-sdk-types": "^5.1.0",
     "@safe-global/types-kit": "^3.0.0",
     "@supabase/supabase-js": "^2.50.3",
