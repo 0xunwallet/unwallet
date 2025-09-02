@@ -22,6 +22,7 @@ export class UserController {
   private getRpcUrlForChain(chainId: number): string {
     const rpcUrls: Record<number, string> = {
       [CHAIN_IDS.SEI_TESTNET]: 'https://evm-rpc-testnet.sei-apis.com', // Sei Testnet
+      [CHAIN_IDS.BASE_SEPOLIA]: 'https://sepolia.base.org', // Base Sepolia
     };
     
     return rpcUrls[chainId] || 'https://evm-rpc-testnet.sei-apis.com'; // Default to Sei Testnet
