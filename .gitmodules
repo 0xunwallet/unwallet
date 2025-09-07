@@ -1,0 +1,3 @@
+[submodule "unwallet-sdk"]
+	path = unwallet-sdk
+	url = https://github.com/0xunwallet/unwallet-sdk.git
