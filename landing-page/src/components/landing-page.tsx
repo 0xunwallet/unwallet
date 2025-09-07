@@ -32,7 +32,7 @@ const BentoGridLanding = () => {
   const faqs = [
     {
       q: "Do I need to create a new wallet?",
-      a: "No, you can use your existing wallet. If not you can create keyless wallets at unwallet.io.",
+      a: "No, you can use your existing wallet. If not you can create keyless wallets at unwallet.me.",
     },
     {
       q: "How we provider privacy?",
@@ -42,7 +42,7 @@ const BentoGridLanding = () => {
     {
       q: "How can I start accepting payments?",
       a: "You can start accepting payments with our API. More info: ",
-      link: "https://docs.unwallet.io",
+      link: "https://docs.unwallet.me",
     },
     {
       q: "How many chains do you support?",
@@ -71,7 +71,7 @@ const BentoGridLanding = () => {
               Unwallet
             </span>
           </div>
-          <Link href="https://v1.app.unwallet.io">
+          <Link href="https://app.unwallet.me">
             <Button
               variant="outline"
               className="border-border hover:bg-accent hover:border-accent rounded-none mono-text"
@@ -603,7 +603,7 @@ console.log(payment.status); // 'completed'`}
                 Schedule Demo
               </Button>
             </Link>
-            <Link href="https://v1.app.unwallet.io">
+            <Link href="https://app.unwallet.me">
               <Button className="bg-background text-foreground hover:bg-background/90 rounded-none mono-text px-8 py-6 text-lg">
                 Enter App
               </Button>
@@ -653,7 +653,7 @@ console.log(payment.status); // 'completed'`}
               Github
             </a>
             <a
-              href="https://docs.unwallet.io"
+              href="https://docs.unwallet.me"
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-muted-foreground hover:text-foreground transition-colors mono-text"
