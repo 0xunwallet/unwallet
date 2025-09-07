@@ -1,7 +1,7 @@
-"use client";
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+'use client';
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Copy,
   ExternalLink,
@@ -9,11 +9,11 @@ import {
   ArrowRight,
   Eye,
   Download,
-} from "lucide-react";
-import Link from "next/link";
-import { usePrivy } from "@privy-io/react-auth";
-import { useUser } from "@/hooks/use-user-data";
-import { Skeleton } from "@/components/ui/skeleton";
+} from 'lucide-react';
+import Link from 'next/link';
+import { usePrivy } from '@privy-io/react-auth';
+import { useUser } from '@/hooks/use-user-data';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Page = () => {
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -28,12 +28,12 @@ const Page = () => {
       setCopiedField(field);
       setTimeout(() => setCopiedField(null), 2000);
     } catch (err) {
-      console.error("Failed to copy: ", err);
+      console.error('Failed to copy: ', err);
     }
   };
 
   const truncateAddress = (address: string) => {
-    if (!address) return "";
+    if (!address) return '';
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
@@ -41,14 +41,14 @@ const Page = () => {
     try {
       await exportWallet();
     } catch (error) {
-      console.error("Failed to export wallet:", error);
+      console.error('Failed to export wallet:', error);
     }
   };
 
   const paymentUrl = username
-    ? `https://v1.app.unwallet.io/${username}/qrcode`
-    : "https://v1.app.unwallet.io/vwaa/qrcode";
-  const apiKey = "sk_test_1234567890abcdef";
+    ? `https://app.unwallet.me/${username}/qrcode`
+    : 'https://app.unwallet.me/vwaa/qrcode';
+  const apiKey = 'sk_test_1234567890abcdef';
   const integrationCode = `<!-- Add this div where you want the payment widget -->
 <div id="crypto-payment" 
      data-unwallet-payment 
@@ -58,7 +58,7 @@ const Page = () => {
      data-description="Product description"></div>
 
 <!-- Include the Unwallet payment widget script -->
-<script src="https://cdn.unwallet.io/widget/v1/merchant-widget.js"></script>
+<script src="https://cdn.unwallet.me/widget/v1/merchant-widget.js"></script>
 
 <!-- Listen for successful payments -->
 <script>
@@ -99,10 +99,10 @@ document.addEventListener('unwallet-payment-success', (event) => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => copyToClipboard(address, "address")}
+                        onClick={() => copyToClipboard(address, 'address')}
                         className="shrink-0 rounded-none"
                       >
-                        {copiedField === "address" ? (
+                        {copiedField === 'address' ? (
                           <CheckCircle className="h-4 w-4" />
                         ) : (
                           <Copy className="h-4 w-4" />
@@ -123,11 +123,11 @@ document.addEventListener('unwallet-payment-success', (event) => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => copyToClipboard(paymentUrl, "url")}
+                    onClick={() => copyToClipboard(paymentUrl, 'url')}
                     className="shrink-0 rounded-none"
                     disabled={isLoading}
                   >
-                    {copiedField === "url" ? (
+                    {copiedField === 'url' ? (
                       <CheckCircle className="h-4 w-4" />
                     ) : (
                       <Copy className="h-4 w-4" />
@@ -140,7 +140,7 @@ document.addEventListener('unwallet-payment-success', (event) => {
                     variant="outline"
                     size="sm"
                     className="rounded-none"
-                    onClick={() => window.open(paymentUrl, "_blank")}
+                    onClick={() => window.open(paymentUrl, '_blank')}
                     disabled={isLoading}
                   >
                     <ExternalLink className="h-4 w-4 mr-2" />
@@ -179,10 +179,10 @@ document.addEventListener('unwallet-payment-success', (event) => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => copyToClipboard(apiKey, "api")}
+                        onClick={() => copyToClipboard(apiKey, 'api')}
                         className="shrink-0 rounded-none text-background hover:bg-background/20"
                       >
-                        {copiedField === "api" ? (
+                        {copiedField === 'api' ? (
                           <CheckCircle className="h-3 w-3" />
                         ) : (
                           <Copy className="h-3 w-3" />
@@ -223,10 +223,10 @@ document.addEventListener('unwallet-payment-success', (event) => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => copyToClipboard(integrationCode, "code")}
+                      onClick={() => copyToClipboard(integrationCode, 'code')}
                       className="absolute top-2 right-2 rounded-none bg-background/20 text-background hover:bg-background/30"
                     >
-                      {copiedField === "code" ? (
+                      {copiedField === 'code' ? (
                         <CheckCircle className="h-4 w-4" />
                       ) : (
                         <Copy className="h-4 w-4" />

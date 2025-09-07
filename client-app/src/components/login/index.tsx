@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from "react";
-import Image from "next/image";
-import { Check, Search, X, ArrowLeft } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { WHITELISTED_NETWORKS } from "@/lib/constants";
-import { type AuthState } from "@/lib/utils";
-import { useRegisterForm } from "@/hooks/use-register-form";
-import { usePrivy, useLogin } from "@privy-io/react-auth";
-import { useWalletClient } from "wagmi";
-import { login as saveAuthState } from "@/lib/utils";
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { Check, Search, X, ArrowLeft } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { WHITELISTED_NETWORKS } from '@/lib/constants';
+import { type AuthState } from '@/lib/utils';
+import { useRegisterForm } from '@/hooks/use-register-form';
+import { usePrivy, useLogin } from '@privy-io/react-auth';
+import { useWalletClient } from 'wagmi';
+import { login as saveAuthState } from '@/lib/utils';
 
 interface AuthPageProps {
-  onLogin: (userData: AuthState["user"]) => void;
+  onLogin: (userData: AuthState['user']) => void;
   onBackToGetStarted: () => void;
   isLoginMode: boolean;
 }
@@ -21,7 +21,7 @@ export default function AuthPage({
   isLoginMode,
 }: AuthPageProps) {
   const [currentStep, setCurrentStep] = useState(1);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Use the registration hook for account creation
   const {
@@ -47,16 +47,16 @@ export default function AuthPage({
   // Remove login hook since user is already authenticated
 
   // Dynamic chains from constants
-  const chains = WHITELISTED_NETWORKS.map((network) => ({
-    id: network.name.toLowerCase().replace(/\s+/g, "-"),
+  const chains = WHITELISTED_NETWORKS.map(network => ({
+    id: network.name.toLowerCase().replace(/\s+/g, '-'),
     name: network.name,
     logo: network.logo,
     chainId: network.chainId,
   }));
 
   // Dynamic tokens from constants - flatten all tokens from all networks
-  const tokens = WHITELISTED_NETWORKS.flatMap((network) =>
-    network.tokens.map((token) => ({
+  const tokens = WHITELISTED_NETWORKS.flatMap(network =>
+    network.tokens.map(token => ({
       id: token.symbol.toLowerCase(),
       name: token.name,
       symbol: token.symbol,
@@ -68,10 +68,10 @@ export default function AuthPage({
     }))
   );
 
-  const tokenOptions = chains.flatMap((chain) =>
+  const tokenOptions = chains.flatMap(chain =>
     tokens
-      .filter((token) => token.networkChainId === chain.chainId)
-      .map((token) => ({
+      .filter(token => token.networkChainId === chain.chainId)
+      .map(token => ({
         id: `${chain.id}-${token.id}`,
         chainId: chain.id,
         chainName: chain.name,
@@ -88,17 +88,17 @@ export default function AuthPage({
   );
 
   // Filter tokens based on search - handle multiple search terms
-  const filteredTokens = tokenOptions.filter((option) => {
+  const filteredTokens = tokenOptions.filter(option => {
     if (!searchQuery) return true;
 
     // Split search query into individual terms
     const searchTerms = searchQuery
       .toLowerCase()
       .split(/\s+/)
-      .filter((term) => term);
+      .filter(term => term);
 
     // Check if ALL search terms are found in the option's searchable text
-    return searchTerms.every((term) => option.searchTerms.includes(term));
+    return searchTerms.every(term => option.searchTerms.includes(term));
   });
 
   const totalSteps = isLoginMode ? 1 : 4; // No wallet connection step needed since user is already authenticated
@@ -127,29 +127,29 @@ export default function AuthPage({
   const handleLogin = async () => {
     // Execute login logic directly since user is already authenticated
     try {
-      const message = "I_WANT_TO_LOGIN";
+      const message = 'I_WANT_TO_LOGIN';
       const signature = await walletClient?.signMessage({
         message: message,
       });
 
       if (!signature) {
-        throw new Error("Failed to sign message");
+        throw new Error('Failed to sign message');
       }
 
-      console.log("Login message signed successfully:", signature);
+      console.log('Login message signed successfully:', signature);
 
       // Create user data for existing user
       const userData = {
-        username: "existing_user",
-        walletType: "personal" as const,
-        selectedTokens: ["sei-testnet-usdc"],
+        username: 'existing_user',
+        walletType: 'personal' as const,
+        selectedTokens: ['sei-testnet-usdc'],
       };
 
       // Save auth state
       saveAuthState(userData);
       onLogin(userData);
     } catch (error) {
-      console.error("Error during login process:", error);
+      console.error('Error during login process:', error);
     }
   };
 
@@ -239,11 +239,11 @@ export default function AuthPage({
               <div className="grid grid-cols-2 gap-4 mt-2">
                 <button
                   type="button"
-                  onClick={() => handleWalletTypeChange("personal")}
+                  onClick={() => handleWalletTypeChange('personal')}
                   className={`p-4 border rounded-none text-left transition-all duration-200 ${
-                    walletType === "personal"
-                      ? "border-primary bg-accent/50"
-                      : "border-border bg-card hover:border-primary/50"
+                    walletType === 'personal'
+                      ? 'border-primary bg-accent/50'
+                      : 'border-border bg-card hover:border-primary/50'
                   }`}
                 >
                   <div className="space-y-2">
@@ -257,16 +257,16 @@ export default function AuthPage({
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleWalletTypeChange("merchant")}
+                  onClick={() => handleWalletTypeChange('merchant')}
                   className={`p-4 border rounded-none text-left transition-all duration-200 ${
-                    walletType === "merchant"
-                      ? "border-primary bg-accent/50"
-                      : "border-border bg-card hover:border-primary/50"
+                    walletType === 'merchant'
+                      ? 'border-primary bg-accent/50'
+                      : 'border-border bg-card hover:border-primary/50'
                   }`}
                 >
                   <div className="space-y-2">
                     <h3 className="font-semibold text-card-foreground">
-                      Merchant
+                      Merchant/Agent
                     </h3>
                     <p className="text-muted-foreground text-sm">
                       Get API access
@@ -305,13 +305,13 @@ export default function AuthPage({
               <input
                 type="text"
                 value={username}
-                onChange={(e) => handleInputChange("username", e.target.value)}
+                onChange={e => handleInputChange('username', e.target.value)}
                 placeholder="Enter username (3-10 chars, alphanumeric)"
                 className="w-full p-3 border border-border rounded-none bg-card text-card-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
               />
             </div>
 
-            {walletType === "merchant" && (
+            {walletType === 'merchant' && (
               <div className="space-y-3">
                 <label className="text-sm font-medium text-card-foreground">
                   Website URI <span className="text-destructive">*</span>
@@ -319,8 +319,8 @@ export default function AuthPage({
                 <input
                   type="url"
                   value={websiteUri}
-                  onChange={(e) =>
-                    handleInputChange("websiteUri", e.target.value)
+                  onChange={e =>
+                    handleInputChange('websiteUri', e.target.value)
                   }
                   placeholder="https://your-website.com"
                   className="w-full p-3 border border-border rounded-none bg-card text-card-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
@@ -356,13 +356,13 @@ export default function AuthPage({
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search tokens or chains..."
                 className="w-full pl-10 pr-10 py-2 border border-border rounded-none bg-card text-card-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
               />
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery("")}
+                  onClick={() => setSearchQuery('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-card-foreground transition-colors"
                 >
                   <X className="w-4 h-4" />
@@ -375,7 +375,7 @@ export default function AuthPage({
               <button
                 onClick={() => {
                   // Select all enabled tokens
-                  tokenOptions.forEach((option) => {
+                  tokenOptions.forEach(option => {
                     if (option.enabled && !selectedTokens.has(option.id)) {
                       handleTokenToggle(option.id);
                     }
@@ -388,7 +388,7 @@ export default function AuthPage({
               <button
                 onClick={() => {
                   // Clear all tokens by toggling each one off
-                  selectedTokens.forEach((tokenId) => {
+                  selectedTokens.forEach(tokenId => {
                     handleTokenToggle(tokenId);
                   });
                 }}
@@ -402,10 +402,11 @@ export default function AuthPage({
             <div className="grid grid-cols-3 gap-2 max-h-[280px] overflow-y-auto pr-1">
               {filteredTokens.length === 0 ? (
                 <div className="col-span-3 text-center py-8 text-muted-foreground text-sm">
-                  No tokens found matching &quot;{searchQuery}&quot;
+                  No tokens found matching &quot;{searchQuery}
+                  &quot;
                 </div>
               ) : (
-                filteredTokens.map((option) => {
+                filteredTokens.map(option => {
                   const isSelected = selectedTokens.has(option.id);
                   return (
                     <button
@@ -414,10 +415,10 @@ export default function AuthPage({
                       disabled={!option.enabled}
                       className={`relative p-3 border rounded-none transition-all duration-200 ${
                         isSelected
-                          ? "border-primary bg-accent/30"
-                          : "border-border bg-card hover:border-primary/50"
+                          ? 'border-primary bg-accent/30'
+                          : 'border-border bg-card hover:border-primary/50'
                       } ${
-                        !option.enabled ? "opacity-50 cursor-not-allowed" : ""
+                        !option.enabled ? 'opacity-50 cursor-not-allowed' : ''
                       }`}
                     >
                       {/* Selected Indicator */}
@@ -507,7 +508,7 @@ export default function AuthPage({
                   </Badge>
                 </div>
 
-                {walletType === "merchant" && (
+                {walletType === 'merchant' && (
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">
                       Website
@@ -533,8 +534,8 @@ export default function AuthPage({
                     Accepting payments in:
                   </p>
                   <div className="grid grid-cols-3 gap-2">
-                    {Array.from(selectedTokens).map((tokenId) => {
-                      const option = tokenOptions.find((t) => t.id === tokenId);
+                    {Array.from(selectedTokens).map(tokenId => {
+                      const option = tokenOptions.find(t => t.id === tokenId);
                       if (!option) return null;
 
                       return (
@@ -614,7 +615,7 @@ export default function AuthPage({
                   </Badge>
                 </div>
 
-                {walletType === "merchant" && (
+                {walletType === 'merchant' && (
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">
                       Website
@@ -640,8 +641,8 @@ export default function AuthPage({
                     Accepting payments in:
                   </p>
                   <div className="grid grid-cols-3 gap-2">
-                    {Array.from(selectedTokens).map((tokenId) => {
-                      const option = tokenOptions.find((t) => t.id === tokenId);
+                    {Array.from(selectedTokens).map(tokenId => {
+                      const option = tokenOptions.find(t => t.id === tokenId);
                       if (!option) return null;
 
                       return (
@@ -732,11 +733,11 @@ export default function AuthPage({
                   disabled={isLoggingIn}
                   className={`px-6 py-3 rounded-none font-medium transition-colors ${
                     !isLoggingIn
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                      : "bg-muted text-muted-foreground cursor-not-allowed"
+                      ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                      : 'bg-muted text-muted-foreground cursor-not-allowed'
                   }`}
                 >
-                  {isLoggingIn ? "Creating Account..." : "Create Account"}
+                  {isLoggingIn ? 'Creating Account...' : 'Create Account'}
                 </button>
               )}
             </div>
@@ -778,7 +779,7 @@ export default function AuthPage({
             className="absolute inset-0 rounded-3xl"
             style={{
               background:
-                "radial-gradient(ellipse at center, transparent 40%, rgba(255,255,255,0.15) 100%)",
+                'radial-gradient(ellipse at center, transparent 40%, rgba(255,255,255,0.15) 100%)',
             }}
           />
 
@@ -786,7 +787,7 @@ export default function AuthPage({
           <div
             className="absolute inset-0 rounded-3xl"
             style={{
-              boxShadow: "inset 0 0 100px 50px rgba(255,255,255,0.2)",
+              boxShadow: 'inset 0 0 100px 50px rgba(255,255,255,0.2)',
             }}
           />
 
@@ -795,7 +796,7 @@ export default function AuthPage({
             className="absolute inset-0 opacity-50 mix-blend-multiply"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-              backgroundRepeat: "repeat",
+              backgroundRepeat: 'repeat',
             }}
           />
 
@@ -815,7 +816,7 @@ export default function AuthPage({
             <div
               className="text-[160px] font-black text-transparent leading-none select-none opacity-60"
               style={{
-                WebkitTextStroke: "2px rgba(255,255,255,0.3)",
+                WebkitTextStroke: '2px rgba(255,255,255,0.3)',
               }}
             >
               UNWALLET
@@ -829,11 +830,11 @@ export default function AuthPage({
                 <h2
                   className="text-2xl font-medium text-foreground/95 leading drop-shadow-lg"
                   style={{
-                    WebkitTextStroke: "2px rgba(255,255,255,0.3)",
+                    WebkitTextStroke: '2px rgba(255,255,255,0.3)',
                   }}
                 >
                   <span className="font-semibold">Unwallet</span> is a one
-                  wallet for payments on any chain which is built for agents,
+                  wallet for payments on any chain which is built for agents
                   merchants, and users.
                 </h2>
               </div>
@@ -845,7 +846,7 @@ export default function AuthPage({
             <div
               className="text-[180px] font-black text-transparent leading-none tracking-tighter select-none"
               style={{
-                WebkitTextStroke: "3px rgba(255,255,255,0.25)",
+                WebkitTextStroke: '3px rgba(255,255,255,0.25)',
               }}
             >
               UNWALLET

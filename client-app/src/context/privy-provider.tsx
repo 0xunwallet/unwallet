@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import React from "react";
-import type { PrivyClientConfig } from "@privy-io/react-auth";
-import { PrivyProvider as PrivyProviderComponent } from "@privy-io/react-auth";
-import { WagmiProvider, createConfig } from "@privy-io/wagmi";
-import type { Chain } from "viem";
+import React from 'react';
+import type { PrivyClientConfig } from '@privy-io/react-auth';
+import { PrivyProvider as PrivyProviderComponent } from '@privy-io/react-auth';
+import { WagmiProvider, createConfig } from '@privy-io/wagmi';
+import type { Chain } from 'viem';
 import {
   getViemTransports,
   getViemChains,
   WHITELISTED_NETWORKS,
-} from "@/lib/constants";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+} from '@/lib/constants';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 export default function PrivyProvider({
   children,
@@ -29,9 +29,9 @@ export default function PrivyProvider({
 
   const privyConfig: PrivyClientConfig = {
     embeddedWallets: {
-      createOnLogin: "users-without-wallets",
+      createOnLogin: 'users-without-wallets',
     },
-    loginMethods: ["google"],
+    loginMethods: ['google'],
     supportedChains: viemChains,
     defaultChain: viemChains[0],
     appearance: {

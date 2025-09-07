@@ -1,5 +1,5 @@
-"use client";
-import React, { useState } from "react";
+'use client';
+import React, { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -7,16 +7,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import {
   ExternalLink,
   Download,
@@ -26,15 +26,15 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   getTransactionExplorerUrl,
   getAddressExplorerUrl,
-} from "@/lib/constants";
+} from '@/lib/constants';
 
 const Page = () => {
-  const [selectedFilter, setSelectedFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const transactionsPerPage = 5;
 
@@ -43,111 +43,111 @@ const Page = () => {
     {
       id: 1,
       amount: 25.5,
-      token: "USDC",
-      network: "Ethereum",
+      token: 'USDC',
+      network: 'Ethereum',
       chainId: 1,
       txHash:
-        "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-      from: "0xAbcdEFgh1234567890AbcdEFgh1234567890abcd",
-      to: "0x1234567890abcdef1234567890abcdef1234567890",
-      status: "completed",
-      date: "2024-01-15",
-      time: "14:30:22",
+        '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+      from: '0xAbcdEFgh1234567890AbcdEFgh1234567890abcd',
+      to: '0x1234567890abcdef1234567890abcdef1234567890',
+      status: 'completed',
+      date: '2024-01-15',
+      time: '14:30:22',
     },
     {
       id: 2,
       amount: 99.99,
-      token: "USDT",
-      network: "Polygon",
+      token: 'USDT',
+      network: 'Polygon',
       chainId: 137,
       txHash:
-        "0x2345678901bcdef12345678901bcdef12345678901bcdef12345678901bcdef",
-      from: "0xBcdeFGhi1234567890BcdeFGhi1234567890bcde",
-      to: "0xabcdef1234567890abcdef1234567890abcdef12",
-      status: "completed",
-      date: "2024-01-14",
-      time: "09:15:45",
+        '0x2345678901bcdef12345678901bcdef12345678901bcdef12345678901bcdef',
+      from: '0xBcdeFGhi1234567890BcdeFGhi1234567890bcde',
+      to: '0xabcdef1234567890abcdef1234567890abcdef12',
+      status: 'completed',
+      date: '2024-01-14',
+      time: '09:15:45',
     },
     {
       id: 3,
       amount: 150.0,
-      token: "USDC",
-      network: "Arbitrum",
+      token: 'USDC',
+      network: 'Arbitrum',
       chainId: 42161,
       txHash:
-        "0x3456789012cdef123456789012cdef123456789012cdef123456789012cdef",
-      from: "0xCdefGHij1234567890CdefGHij1234567890cdef",
-      to: "0x567890abcdef1234567890abcdef1234567890ab",
-      status: "completed",
-      date: "2024-01-13",
-      time: "16:45:33",
+        '0x3456789012cdef123456789012cdef123456789012cdef123456789012cdef',
+      from: '0xCdefGHij1234567890CdefGHij1234567890cdef',
+      to: '0x567890abcdef1234567890abcdef1234567890ab',
+      status: 'completed',
+      date: '2024-01-13',
+      time: '16:45:33',
     },
     {
       id: 4,
       amount: 75.25,
-      token: "DAI",
-      network: "Optimism",
+      token: 'DAI',
+      network: 'Optimism',
       chainId: 10,
-      txHash: "0x4567890123def1234567890123def1234567890123def1234567890123def",
-      from: "0xDefgHIjk1234567890DefgHIjk1234567890defg",
-      to: "0x7890abcdef1234567890abcdef1234567890abcd",
-      status: "completed",
-      date: "2024-01-12",
-      time: "11:20:18",
+      txHash: '0x4567890123def1234567890123def1234567890123def1234567890123def',
+      from: '0xDefgHIjk1234567890DefgHIjk1234567890defg',
+      to: '0x7890abcdef1234567890abcdef1234567890abcd',
+      status: 'completed',
+      date: '2024-01-12',
+      time: '11:20:18',
     },
     {
       id: 5,
       amount: 200.0,
-      token: "USDC",
-      network: "Morph Holesky",
+      token: 'USDC',
+      network: 'Morph Holesky',
       chainId: 2810,
-      txHash: "0x5678901234ef12345678901234ef12345678901234ef12345678901234ef",
-      from: "0xEfghIJkl1234567890EfghIJkl1234567890efgh",
-      to: "0x9012abcdef1234567890abcdef1234567890ef",
-      status: "completed",
-      date: "2024-01-11",
-      time: "13:55:42",
+      txHash: '0x5678901234ef12345678901234ef12345678901234ef12345678901234ef',
+      from: '0xEfghIJkl1234567890EfghIJkl1234567890efgh',
+      to: '0x9012abcdef1234567890abcdef1234567890ef',
+      status: 'completed',
+      date: '2024-01-11',
+      time: '13:55:42',
     },
     {
       id: 6,
       amount: 45.75,
-      token: "USDT",
-      network: "Ethereum",
+      token: 'USDT',
+      network: 'Ethereum',
       chainId: 1,
-      txHash: "0x6789012345f123456789012345f123456789012345f123456789012345f",
-      from: "0xFghiJKlm1234567890FghiJKlm1234567890fghi",
-      to: "0x1234bcdef1234567890bcdef1234567890bcdef1",
-      status: "completed",
-      date: "2024-01-10",
-      time: "08:30:15",
+      txHash: '0x6789012345f123456789012345f123456789012345f123456789012345f',
+      from: '0xFghiJKlm1234567890FghiJKlm1234567890fghi',
+      to: '0x1234bcdef1234567890bcdef1234567890bcdef1',
+      status: 'completed',
+      date: '2024-01-10',
+      time: '08:30:15',
     },
     {
       id: 7,
       amount: 120.5,
-      token: "USDC",
-      network: "Polygon",
+      token: 'USDC',
+      network: 'Polygon',
       chainId: 137,
       txHash:
-        "0x7890123456g1234567890123456g1234567890123456g1234567890123456g",
-      from: "0xGhijKLmn1234567890GhijKLmn1234567890ghij",
-      to: "0x3456cdef1234567890cdef1234567890cdef123",
-      status: "completed",
-      date: "2024-01-09",
-      time: "15:20:30",
+        '0x7890123456g1234567890123456g1234567890123456g1234567890123456g',
+      from: '0xGhijKLmn1234567890GhijKLmn1234567890ghij',
+      to: '0x3456cdef1234567890cdef1234567890cdef123',
+      status: 'completed',
+      date: '2024-01-09',
+      time: '15:20:30',
     },
     {
       id: 8,
       amount: 88.88,
-      token: "DAI",
-      network: "Arbitrum",
+      token: 'DAI',
+      network: 'Arbitrum',
       chainId: 42161,
       txHash:
-        "0x8901234567h12345678901234567h12345678901234567h12345678901234567h",
-      from: "0xHijkLMno1234567890HijkLMno1234567890hijk",
-      to: "0x5678def1234567890def1234567890def12345",
-      status: "completed",
-      date: "2024-01-08",
-      time: "12:45:22",
+        '0x8901234567h12345678901234567h12345678901234567h12345678901234567h',
+      from: '0xHijkLMno1234567890HijkLMno1234567890hijk',
+      to: '0x5678def1234567890def1234567890def12345',
+      status: 'completed',
+      date: '2024-01-08',
+      time: '12:45:22',
     },
   ];
 
@@ -156,7 +156,7 @@ const Page = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "completed":
+      case 'completed':
         return (
           <Badge
             variant="secondary"
@@ -165,7 +165,7 @@ const Page = () => {
             Completed
           </Badge>
         );
-      case "pending":
+      case 'pending':
         return (
           <Badge
             variant="secondary"
@@ -174,7 +174,7 @@ const Page = () => {
             Pending
           </Badge>
         );
-      case "failed":
+      case 'failed':
         return (
           <Badge
             variant="secondary"
@@ -189,11 +189,11 @@ const Page = () => {
   };
 
   // Filter and search logic
-  const filteredData = revenueData.filter((row) => {
+  const filteredData = revenueData.filter(row => {
     const matchesFilter =
-      selectedFilter === "all" || row.status === selectedFilter;
+      selectedFilter === 'all' || row.status === selectedFilter;
     const matchesSearch =
-      searchQuery === "" ||
+      searchQuery === '' ||
       row.txHash.toLowerCase().includes(searchQuery.toLowerCase()) ||
       row.from.toLowerCase().includes(searchQuery.toLowerCase()) ||
       row.to.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -252,7 +252,7 @@ const Page = () => {
               $
               {totalTransactions > 0
                 ? (totalRevenue / totalTransactions).toFixed(2)
-                : "0.00"}
+                : '0.00'}
             </p>
           </div>
         </div>
@@ -269,28 +269,28 @@ const Page = () => {
                   className="rounded-none font-mono"
                 >
                   <Filter className="h-4 w-4 mr-2" />
-                  {selectedFilter === "all"
-                    ? "All Transactions"
-                    : selectedFilter === "completed"
-                    ? "Completed"
-                    : selectedFilter === "pending"
-                    ? "Pending"
-                    : "Failed"}
+                  {selectedFilter === 'all'
+                    ? 'All Transactions'
+                    : selectedFilter === 'completed'
+                      ? 'Completed'
+                      : selectedFilter === 'pending'
+                        ? 'Pending'
+                        : 'Failed'}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="rounded-none">
-                <DropdownMenuItem onClick={() => setSelectedFilter("all")}>
+                <DropdownMenuItem onClick={() => setSelectedFilter('all')}>
                   All Transactions
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => setSelectedFilter("completed")}
+                  onClick={() => setSelectedFilter('completed')}
                 >
                   Completed
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSelectedFilter("pending")}>
+                <DropdownMenuItem onClick={() => setSelectedFilter('pending')}>
                   Pending
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSelectedFilter("failed")}>
+                <DropdownMenuItem onClick={() => setSelectedFilter('failed')}>
                   Failed
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -301,9 +301,9 @@ const Page = () => {
               <Input
                 placeholder="Search transactions..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={e => setSearchQuery(e.target.value)}
                 className="w-64 rounded-none font-mono text-sm"
-                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                onKeyPress={e => e.key === 'Enter' && handleSearch()}
               />
               <Button
                 variant="outline"
@@ -347,8 +347,8 @@ const Page = () => {
                   key={row.id}
                   className={
                     index === currentData.length - 1
-                      ? "border-b-0"
-                      : "border-border/50"
+                      ? 'border-b-0'
+                      : 'border-border/50'
                   }
                 >
                   <TableCell className="font-medium">
@@ -434,8 +434,8 @@ const Page = () => {
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-6">
             <div className="text-sm text-muted-foreground font-mono">
-              Showing {startIndex + 1} to{" "}
-              {Math.min(endIndex, filteredData.length)} of {filteredData.length}{" "}
+              Showing {startIndex + 1} to{' '}
+              {Math.min(endIndex, filteredData.length)} of {filteredData.length}{' '}
               results
             </div>
             <div className="flex items-center gap-2">
@@ -460,10 +460,10 @@ const Page = () => {
 
               <div className="flex items-center gap-1">
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (page) => (
+                  page => (
                     <Button
                       key={page}
-                      variant={currentPage === page ? "default" : "outline"}
+                      variant={currentPage === page ? 'default' : 'outline'}
                       size="sm"
                       className="rounded-none font-mono w-8 h-8 p-0"
                       onClick={() => handlePageChange(page)}

@@ -1,7 +1,7 @@
-"use client";
-import { useParams } from "next/navigation";
+'use client';
+import { useParams, useSearchParams } from 'next/navigation';
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Check,
   Copy,
@@ -10,60 +10,57 @@ import {
   Home,
   ChevronLeft,
   // ExternalLink,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import axios from "axios";
+} from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import axios from 'axios';
 import {
   BACKEND_URL,
   getCurrentNetwork,
+  getNetworkByChainId,
   WHITELISTED_NETWORKS,
-} from "@/lib/constants";
-import { Button } from "@/components/ui/button";
+} from '@/lib/constants';
+import { Button } from '@/components/ui/button';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from '@/components/ui/popover';
 import {
   Command,
   CommandGroup,
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
+} from '@/components/ui/command';
 
 const Page = () => {
   const { username } = useParams();
   const networks = WHITELISTED_NETWORKS;
   const router = useRouter();
-  const [selectedToken, setSelectedToken] = useState<string>("");
+  const [selectedToken, setSelectedToken] = useState<string>('');
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isStealthAddressCopied, setIsStealthAddressCopied] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
-  const [qrData, setQrData] = useState<string>("");
+  const [qrData, setQrData] = useState<string>('');
   const [open, setOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
+  const [searchValue, setSearchValue] = useState('');
   const [paymentId, setPaymentId] = useState<string | null>(null);
-  const [paymentStatus, setPaymentStatus] = useState<string>("pending");
+  const [paymentStatus, setPaymentStatus] = useState<string>('pending');
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  const currentNetwork = getCurrentNetwork(networks);
+  const chainId = useSearchParams().get('chainId');
+  const currentNetwork = chainId
+    ? getNetworkByChainId(Number(chainId))
+    : getCurrentNetwork(networks);
 
   const getStealthAddress = async (tokenAddress: string) => {
-    console.log("getStealthAddress", tokenAddress);
-
     const stealthAddresses: string[] = [];
     const safeAddresses: string[] = [];
     const stealthResponsesData: Record<string, unknown>[] = [];
 
     // Use the username parameter from URL
     const usernameStr = username as string;
-
-    // Debug: Log the credentials and backend URL
-    console.log("🔐 API Request Info:", { username: usernameStr });
-    console.log("🌐 Backend URL:", BACKEND_URL);
 
     // No headers needed - handled by proxy API route
 
@@ -80,9 +77,9 @@ const Page = () => {
       };
 
       // Debug: Log the request details - Use new API structure
-      console.log("📤 Request URL:", `/api/stealth`);
-      console.log("📤 Request Body:", stealthRequest);
-      console.log("📤 Request Body (JSON):", JSON.stringify(stealthRequest));
+      console.log('📤 Request URL:', `/api/stealth`);
+      console.log('📤 Request Body:', stealthRequest);
+      console.log('📤 Request Body (JSON):', JSON.stringify(stealthRequest));
 
       try {
         const stealthResponse = await axios.post(
@@ -94,15 +91,15 @@ const Page = () => {
         );
 
         // Debug: Log response status
-        console.log("📥 Response Status:", stealthResponse.status);
+        console.log('📥 Response Status:', stealthResponse.status);
         console.log(
-          "📥 Response OK:",
+          '📥 Response OK:',
           stealthResponse.status >= 200 && stealthResponse.status < 300
         );
 
         const stealthResponseData = stealthResponse.data;
-        console.log("📥 Response Data:", stealthResponseData);
-        console.log("📥 Full Response:", stealthResponse);
+        console.log('📥 Response Data:', stealthResponseData);
+        console.log('📥 Full Response:', stealthResponse);
 
         const stealthData = stealthResponseData.data;
         stealthAddresses.push(stealthData.address);
@@ -110,10 +107,10 @@ const Page = () => {
         // Only use safeAddress if it exists in the response
         if (stealthData.safeAddress && stealthData.safeAddress.address) {
           safeAddresses.push(stealthData.safeAddress.address);
-          console.log("✅ SafeAddress found:", stealthData.safeAddress.address);
+          console.log('✅ SafeAddress found:', stealthData.safeAddress.address);
         } else {
           console.log(
-            "❌ No safeAddress in response. Available keys:",
+            '❌ No safeAddress in response. Available keys:',
             Object.keys(stealthData)
           );
         }
@@ -124,7 +121,7 @@ const Page = () => {
         // Get the current nonce from server - Use new API structure
         const nonceResponse = await axios.get(
           `${BACKEND_URL}/api/user/${usernameStr}/nonce`, // Updated endpoint
-          { headers: { "Content-Type": "application/json" } } // Simplified headers
+          { headers: { 'Content-Type': 'application/json' } } // Simplified headers
         );
 
         const nonceResponseData = nonceResponse.data;
@@ -143,13 +140,13 @@ const Page = () => {
         );
 
         // Additional debugging for network errors
-        if (error instanceof TypeError && error.message === "Failed to fetch") {
-          console.error("🌐 Network Error Details:");
-          console.error("- Check if the server is running");
-          console.error("- Check CORS settings");
-          console.error("- Check network connectivity");
+        if (error instanceof TypeError && error.message === 'Failed to fetch') {
+          console.error('🌐 Network Error Details:');
+          console.error('- Check if the server is running');
+          console.error('- Check CORS settings');
+          console.error('- Check network connectivity');
           console.error(
-            "- Server URL:",
+            '- Server URL:',
             `${BACKEND_URL}/api/user/${usernameStr}/stealth`
           );
         }
@@ -159,18 +156,18 @@ const Page = () => {
     }
 
     console.log(`✅ Generated all ${count} stealth addresses via SERVER API`);
-    console.log("📊 Server-generated data:");
+    console.log('📊 Server-generated data:');
     console.log(`  - Stealth Addresses: ${stealthAddresses.length}`);
     console.log(`  - Safe Addresses: ${safeAddresses.length}`);
-    console.log("📋 First 3 stealth addresses:");
+    console.log('📋 First 3 stealth addresses:');
     for (let i = 0; i < Math.min(3, stealthAddresses.length); i++) {
       console.log(`  ${i + 1}. ${stealthAddresses[i]}`);
     }
-    console.log("📋 First 3 Safe addresses:");
+    console.log('📋 First 3 Safe addresses:');
     for (let i = 0; i < Math.min(3, safeAddresses.length); i++) {
       console.log(`  ${i + 1}. ${safeAddresses[i]}`);
     }
-    console.log("safeAddresses", safeAddresses);
+    console.log('safeAddresses', safeAddresses);
     return safeAddresses[0];
   };
 
@@ -192,7 +189,7 @@ const Page = () => {
         setIsStealthAddressCopied(false);
       }, 3000);
     } catch (err) {
-      console.error("Failed to copy: ", err);
+      console.error('Failed to copy: ', err);
     }
   };
 
@@ -202,31 +199,31 @@ const Page = () => {
         `${BACKEND_URL}/api/user/payment/${paymentId}/status`,
         {
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
         }
       );
 
       const data = response.data;
-      console.log("📊 Payment Status:", data);
+      console.log('📊 Payment Status:', data);
 
       if (data.success && data.data) {
-        const status = data.data.status || "pending";
+        const status = data.data.status || 'pending';
         setPaymentStatus(status);
-        console.log("🔄 Payment status updated to:", status);
+        console.log('🔄 Payment status updated to:', status);
 
         // Stop polling if payment is completed or failed
-        if (status === "completed" || status === "failed") {
-          console.log("🛑 Stopping polling - payment status:", status);
+        if (status === 'completed' || status === 'failed') {
+          console.log('🛑 Stopping polling - payment status:', status);
           if (pollingIntervalRef.current) {
             clearInterval(pollingIntervalRef.current);
             pollingIntervalRef.current = null;
-            console.log("✅ Polling stopped successfully");
+            console.log('✅ Polling stopped successfully');
           }
         }
       }
     } catch (error) {
-      console.error("❌ Error checking payment status:", error);
+      console.error('❌ Error checking payment status:', error);
     }
   };
 
@@ -236,7 +233,7 @@ const Page = () => {
       clearInterval(pollingIntervalRef.current);
     }
 
-    console.log("🚀 Starting payment polling for payment ID:", paymentId);
+    console.log('🚀 Starting payment polling for payment ID:', paymentId);
 
     // Start polling every 1 second
     const interval = setInterval(() => {
@@ -248,7 +245,7 @@ const Page = () => {
 
   const stopPaymentPolling = () => {
     if (pollingIntervalRef.current) {
-      console.log("🛑 Manually stopping payment polling");
+      console.log('🛑 Manually stopping payment polling');
       clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
     }
@@ -266,7 +263,7 @@ const Page = () => {
 
       // Find selected token details
       const tokenDetails = currentNetwork.tokens.find(
-        (token) => token.address === selectedToken
+        token => token.address === selectedToken
       );
 
       // Create JSON payload for QR code
@@ -283,7 +280,7 @@ const Page = () => {
         },
         stealthAddress: address,
         recipient: username,
-        amount: "50.00", // You can make this dynamic later
+        amount: '50.00', // You can make this dynamic later
       };
 
       const qrDataString = JSON.stringify(paymentData);
@@ -293,8 +290,8 @@ const Page = () => {
       setQrCodeUrl(qrUrl);
       setShowQRCode(true);
     } catch (err) {
-      setError("Failed to generate payment address");
-      console.error("Error generating stealth address:", err);
+      setError('Failed to generate payment address');
+      console.error('Error generating stealth address:', err);
     } finally {
       setIsLoading(false);
     }
@@ -362,7 +359,7 @@ const Page = () => {
             <div className="relative">
               <select
                 disabled
-                value={currentNetwork?.name || ""}
+                value={currentNetwork?.name || ''}
                 className="w-full p-3 bg-muted border border-border rounded-lg text-foreground appearance-none cursor-not-allowed opacity-60"
               >
                 <option value={currentNetwork?.name}>
@@ -391,13 +388,13 @@ const Page = () => {
                 >
                   {selectedToken
                     ? currentNetwork?.tokens.find(
-                        (token) => token.address === selectedToken
+                        token => token.address === selectedToken
                       )?.symbol +
-                      " - " +
+                      ' - ' +
                       currentNetwork?.tokens.find(
-                        (token) => token.address === selectedToken
+                        token => token.address === selectedToken
                       )?.name
-                    : "Select a token..."}
+                    : 'Select a token...'}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
@@ -411,7 +408,7 @@ const Page = () => {
                   <CommandList>
                     <CommandGroup>
                       {currentNetwork?.tokens
-                        ?.filter((token) => {
+                        ?.filter(token => {
                           if (!searchValue) return true;
                           return (
                             token.name
@@ -422,17 +419,17 @@ const Page = () => {
                               .includes(searchValue.toLowerCase())
                           );
                         })
-                        .map((token) => (
+                        .map(token => (
                           <CommandItem
                             key={token.address}
                             onClick={() => {
                               setSelectedToken(
                                 token.address === selectedToken
-                                  ? ""
+                                  ? ''
                                   : token.address
                               );
                               setOpen(false);
-                              setSearchValue("");
+                              setSearchValue('');
                             }}
                             className="cursor-pointer"
                           >
@@ -448,14 +445,14 @@ const Page = () => {
                               <Check
                                 className={`ml-auto h-4 w-4 ${
                                   selectedToken === token.address
-                                    ? "opacity-100"
-                                    : "opacity-0"
+                                    ? 'opacity-100'
+                                    : 'opacity-0'
                                 }`}
                               />
                             </div>
                           </CommandItem>
                         ))}
-                      {currentNetwork?.tokens?.filter((token) => {
+                      {currentNetwork?.tokens?.filter(token => {
                         if (!searchValue) return false;
                         return !(
                           token.name
@@ -490,7 +487,7 @@ const Page = () => {
                 Generating...
               </div>
             ) : (
-              "Generate Payment QR Code"
+              'Generate Payment QR Code'
             )}
           </button>
 
@@ -526,7 +523,7 @@ const Page = () => {
               className="mx-auto mb-4"
               style={{
                 //    filter: 'contrast(100) brightness(0) invert(1)',
-                mixBlendMode: "multiply",
+                mixBlendMode: 'multiply',
               }}
             />
           )}
@@ -536,8 +533,8 @@ const Page = () => {
             <p className="text-sm text-muted-foreground">Token</p>
             <p className="text-lg font-semibold text-background">
               {currentNetwork?.tokens.find(
-                (token) => token.address === selectedToken
-              )?.symbol || "Token"}
+                token => token.address === selectedToken
+              )?.symbol || 'Token'}
             </p>
           </div>
         </div>
@@ -554,7 +551,7 @@ const Page = () => {
               }
               className="p-2 bg-background border border-border rounded-lg hover:bg-muted/50 transition-colors"
               title={
-                isStealthAddressCopied ? "Copied!" : "Copy stealth address"
+                isStealthAddressCopied ? 'Copied!' : 'Copy stealth address'
               }
             >
               {isStealthAddressCopied ? (
@@ -568,7 +565,7 @@ const Page = () => {
 
         {/* Status Indicator */}
         <div className="text-center">
-          {paymentStatus === "completed" ? (
+          {paymentStatus === 'completed' ? (
             <div className="space-y-3">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -584,7 +581,7 @@ const Page = () => {
                 </button>
               </div> */}
             </div>
-          ) : paymentStatus === "failed" ? (
+          ) : paymentStatus === 'failed' ? (
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs">
               <div className="w-2 h-2 bg-red-500 rounded-full"></div>
               Payment failed
@@ -604,9 +601,9 @@ const Page = () => {
             className="text-sm flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ChevronLeft /> Back to setup
-          </button>{" "}
+          </button>{' '}
           <button
-            onClick={() => router.push("/")}
+            onClick={() => router.push('/')}
             className="text-sm flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <Home /> Go to home

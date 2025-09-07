@@ -1,15 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
-import axios from "axios";
+import { NextRequest, NextResponse } from 'next/server';
+import axios from 'axios';
 
 const BACKEND_URL =
-  process.env.BACKEND_URL || "https://unwall-production.up.railway.app";
+  process.env.NEXT_PUBLIC_BACKEND_URL || 'https://unwall-production.up.railway.app';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { username, ...stealthRequest } = body;
 
-    console.log("🔍 Proxy Request:", {
+    console.log('🔍 Proxy Request:', {
       url: `${BACKEND_URL}/api/user/${username}/stealth`,
       body: stealthRequest,
       headers: Object.fromEntries(request.headers.entries()),
@@ -17,10 +17,10 @@ export async function POST(request: NextRequest) {
 
     // Headers to match the curl request exactly
     const headers = {
-      accept: "*/*",
-      "accept-language": "en-GB,en-US;q=0.9,en;q=0.8,hi;q=0.7",
-      "content-type": "application/json",
-      dnt: "1",
+      accept: '*/*',
+      'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8,hi;q=0.7',
+      'content-type': 'application/json',
+      dnt: '1',
     };
 
     const response = await axios.post(
@@ -29,11 +29,11 @@ export async function POST(request: NextRequest) {
       { headers }
     );
 
-    console.log("📥 Proxy Response:", response.data);
+    console.log('📥 Proxy Response:', response.data);
 
     return NextResponse.json(response.data);
   } catch (error) {
-    console.error("❌ Proxy Error:", error);
+    console.error('❌ Proxy Error:', error);
 
     if (axios.isAxiosError(error)) {
       return NextResponse.json(
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

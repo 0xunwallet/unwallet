@@ -1,35 +1,39 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import Image from "next/image";
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import {
   getAuthState,
   logout as removeAuthState,
   type AuthState,
-} from "@/lib/utils";
-import GetStarted from "./home/get-started";
-import AuthPage from "./login";
-import Navbar from "./navbar";
-import { useLogout, usePrivy, useLogin } from "@privy-io/react-auth";
+} from '@/lib/utils';
+import GetStarted from './home/get-started';
+import AuthPage from './login';
+import Navbar from './navbar';
+import { useLogout, usePrivy, useLogin } from '@privy-io/react-auth';
+import { usePathname } from 'next/navigation';
 
-type AuthView = "get-started" | "signup" | "login";
+type AuthView = 'get-started' | 'signup' | 'login';
 
 interface AuthWrapperProps {
   children: React.ReactNode;
 }
 
 const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
-  const [authState, setAuthState] = useState<AuthState>({ isLoggedIn: false });
-  const [currentView, setCurrentView] = useState<AuthView>("get-started");
+  const [authState, setAuthState] = useState<AuthState>({
+    isLoggedIn: false,
+  });
+  const [currentView, setCurrentView] = useState<AuthView>('get-started');
   const [isLoading, setIsLoading] = useState(true);
 
   const { ready, authenticated } = usePrivy();
+  const isQrcodePath = usePathname().split('/')[2] === 'qrcode';
 
   const { login } = useLogin();
 
   const { logout } = useLogout({
     onSuccess: () => {
-      console.log("Logout complete");
+      console.log('Logout complete');
       handleLogout();
     },
   });
@@ -41,19 +45,31 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
     setIsLoading(false);
   }, []);
 
-  const handleLogin = (userData: AuthState["user"]) => {
+  const handleLogin = (userData: AuthState['user']) => {
     setAuthState({ isLoggedIn: true, user: userData });
   };
 
   const handleLogout = () => {
     removeAuthState();
     setAuthState({ isLoggedIn: false });
-    setCurrentView("get-started");
+    setCurrentView('get-started');
   };
 
   const handleViewChange = (view: AuthView) => {
     setCurrentView(view);
   };
+
+  if (isQrcodePath) {
+    return (
+      <div className="min-h-screen bg-background text-foreground overflow-hidden">
+        {/* Subtle gradient background */}
+        <div className="fixed inset-0 bg-gradient-to-br from-background via-background to-accent/5 pointer-events-none" />
+        <div className="fixed top-[-200px] right-[-200px] w-[600px] h-[600px] bg-foreground/5 blur-3xl pointer-events-none" />
+        <div className="fixed bottom-[-200px] left-[-200px] w-[600px] h-[600px] bg-accent/10 blur-3xl pointer-events-none" />
+        <div className="relative z-10 pt-20">{children}</div>
+      </div>
+    );
+  }
 
   // Show loading state while checking auth
   if (isLoading || !ready) {
@@ -129,21 +145,21 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
                 </div>
 
                 <p className="text-muted-foreground text-xs text-center">
-                  By using Unwallet, you agree to the{" "}
+                  By using Unwallet, you agree to the{' '}
                   <a
                     href="#"
                     className="text-primary hover:text-primary/80 transition-colors"
                   >
                     Terms of Service
-                  </a>{" "}
-                  and{" "}
+                  </a>{' '}
+                  and{' '}
                   <a
                     href="#"
                     className="text-primary hover:text-primary/80 transition-colors"
                   >
                     Privacy Policy
                   </a>
-                  , including{" "}
+                  , including{' '}
                   <a
                     href="#"
                     className="text-primary hover:text-primary/80 transition-colors"
@@ -176,23 +192,23 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
         <div className="fixed top-[-200px] right-[-200px] w-[600px] h-[600px] bg-foreground/5 blur-3xl pointer-events-none" />
         <div className="fixed bottom-[-200px] left-[-200px] w-[600px] h-[600px] bg-accent/10 blur-3xl pointer-events-none" />
         <div className="relative z-10">
-          {currentView === "get-started" && (
+          {currentView === 'get-started' && (
             <GetStarted
-              onSignIn={() => handleViewChange("login")}
-              onCreateWallet={() => handleViewChange("signup")}
+              onSignIn={() => handleViewChange('login')}
+              onCreateWallet={() => handleViewChange('signup')}
             />
           )}
-          {currentView === "signup" && (
+          {currentView === 'signup' && (
             <AuthPage
               onLogin={handleLogin}
-              onBackToGetStarted={() => handleViewChange("get-started")}
+              onBackToGetStarted={() => handleViewChange('get-started')}
               isLoginMode={false}
             />
           )}
-          {currentView === "login" && (
+          {currentView === 'login' && (
             <AuthPage
               onLogin={handleLogin}
-              onBackToGetStarted={() => handleViewChange("get-started")}
+              onBackToGetStarted={() => handleViewChange('get-started')}
               isLoginMode={true}
             />
           )}

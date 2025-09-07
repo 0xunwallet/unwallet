@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -6,18 +6,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   AlertTriangle,
   RefreshCw,
@@ -25,8 +25,8 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-} from "lucide-react";
-import { ExternalLink } from "lucide-react";
+} from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import {
   getTransactionExplorerUrl,
   getAddressExplorerUrl,
@@ -37,37 +37,34 @@ import {
   SAFE_ABI,
   USDC_ABI,
   RPC_CONFIG,
-} from "@/lib/constants";
-import { useUser } from "@/hooks/use-user-data";
-import { WithdrawalTableSkeleton } from "@/components/ui/loading-skeletons";
-import {
-  useWalletClient,
-  useAccount,
-  usePublicClient,
-  useSwitchChain,
-} from "wagmi";
-import { privateKeyToAccount } from "viem/accounts";
-import { parseUnits } from "viem";
+} from '@/lib/constants';
+import { useUser } from '@/hooks/use-user-data';
+import { WithdrawalTableSkeleton } from '@/components/ui/loading-skeletons';
+import { useWalletClient, useSwitchChain } from 'wagmi';
+import { privateKeyToAccount } from 'viem/accounts';
+import { parseUnits } from 'viem';
 import {
   predictSafeAddress,
   buildSafeTransaction,
   safeSignTypedData,
-} from "@/lib/safe-utils";
-import { getContractNetworks } from "@/lib/safe-contracts";
+  publicClient as basePublicClient,
+} from '@/lib/safe-utils';
+import { baseSepolia } from 'viem/chains';
+// import { getContractNetworks } from '@/lib/safe-contracts';
 import {
   generateEphemeralPrivateKey,
   extractViewingPrivateKeyNode,
   generateKeysFromSignature,
   generateStealthPrivateKey,
-} from "@fluidkey/stealth-account-kit";
-import Safe from "@safe-global/protocol-kit";
-import { createWalletClient, http, encodeFunctionData } from "viem";
+} from '@fluidkey/stealth-account-kit';
+import Safe from '@safe-global/protocol-kit';
+import { createWalletClient, http, encodeFunctionData } from 'viem';
 
 const Withdraw = () => {
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [isWithdrawDialogOpen, setIsWithdrawDialogOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState(0);
-  const [recipientAddress, setRecipientAddress] = useState("");
+  const [recipientAddress, setRecipientAddress] = useState('0xc6377415Ee98A7b71161Ee963603eE52fF7750FC');
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const withdrawalsPerPage = 8;
@@ -81,7 +78,7 @@ const Withdraw = () => {
   const [isBatchProcessing, setIsBatchProcessing] = useState(false);
 
   const { data: walletClient } = useWalletClient();
-  const publicClient = usePublicClient();
+  const publicClient = basePublicClient;
 
   const { switchChainAsync } = useSwitchChain();
 
@@ -94,28 +91,21 @@ const Withdraw = () => {
     username,
   } = useUser();
 
+  console.log('withdrawals: ', withdrawals)
+
   const currentNetwork = getCurrentNetwork(WHITELISTED_NETWORKS);
-  const currentChain = {
-    id: currentNetwork?.chainId || 1328,
-    name: currentNetwork?.name || "Sei Testnet",
-    nativeCurrency: currentNetwork?.nativeCurrency || {
-      name: "SEI",
-      symbol: "SEI",
-      decimals: 18,
-    },
-    rpcUrls: { default: { http: [currentNetwork?.rpcUrl || ""] } },
-  };
+  // Using explicit Base Sepolia chain via viem/chains
 
   // Transform withdrawal data to table format with proper USDC formatting
   const tableData = withdrawals.map((withdrawal, index) => {
     // Ensure rawBalance is a string and handle potential errors
-    const balance = withdrawal.balance || "0";
+    const balance = withdrawal.balance || '0';
 
     let amount = 0;
     try {
       amount = parseFloat(balance);
     } catch (error) {
-      console.error("Error formatting amount:", error);
+      console.error('Error formatting amount:', error);
       amount = 0;
     }
 
@@ -123,8 +113,8 @@ const Withdraw = () => {
       id: index + 1,
       amount,
       token: withdrawal.symbol,
-      network: "Sei Testnet",
-      chainId: 1328,
+      network: 'Arbitrum Sepolia',
+      chainId: currentNetwork?.chainId,
       txHash: withdrawal.transactionHash,
       from: withdrawal.address,
       isFunded: withdrawal.isFunded,
@@ -155,7 +145,7 @@ const Withdraw = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedRows(tableData.map((row) => row.id));
+      setSelectedRows(tableData.map(row => row.id));
     } else {
       setSelectedRows([]);
     }
@@ -165,12 +155,12 @@ const Withdraw = () => {
     if (checked) {
       setSelectedRows([...selectedRows, rowId]);
     } else {
-      setSelectedRows(selectedRows.filter((id) => id !== rowId));
+      setSelectedRows(selectedRows.filter(id => id !== rowId));
     }
   };
 
   const handleWithdraw = (id: number) => {
-    const row = tableData.find((r) => r.id === id);
+    const row = tableData.find(r => r.id === id);
     if (row) {
       setSelectedWithdrawal(row);
       setWithdrawAmount(row.amount);
@@ -180,7 +170,7 @@ const Withdraw = () => {
 
   const handleWithdrawSelected = () => {
     if (selectedRows.length === 0) {
-      alert("Please select at least one withdrawal");
+      alert('Please select at least one withdrawal');
       return;
     }
 
@@ -191,7 +181,7 @@ const Withdraw = () => {
 
   const generateInitialKeysOnClient = async (uniqueNonces: number[]) => {
     if (!walletClient) {
-      throw new Error("Wallet client not available");
+      throw new Error('Wallet client not available');
     }
 
     // STEP 1: Create a deterministic message for signing
@@ -208,32 +198,32 @@ const Withdraw = () => {
       viewKeyNodeNumber
     );
 
-    const processedKeys = uniqueNonces.map((nonce) => {
+    const processedKeys = uniqueNonces.map(nonce => {
       const ephemeralPrivateKey = generateEphemeralPrivateKey({
         viewingPrivateKeyNode: viewingPrivateKeyNode,
         nonce: BigInt(nonce.toString()), // convert to bigint
-        chainId: 1328, // Sei Testnet
+        chainId: currentNetwork?.chainId as number, // Sei Testnet
       });
 
       const ephemeralPrivateKeyRaw = ephemeralPrivateKey;
-      console.log("ephemeralPrivateKeyRaw", ephemeralPrivateKeyRaw);
+      console.log('ephemeralPrivateKeyRaw', ephemeralPrivateKeyRaw);
 
       const ephemeralPrivateKeyHex = ephemeralPrivateKey.ephemeralPrivateKey;
 
-      console.log("ephemeralPrivateKeyHex", ephemeralPrivateKeyHex);
+      console.log('ephemeralPrivateKeyHex', ephemeralPrivateKeyHex);
 
       // Ensure it's in the correct format (0x prefixed hex string)
       const formattedEphemeralPrivateKey =
         `${ephemeralPrivateKeyHex}` as `0x${string}`;
 
-      console.log("formattedEphemeralPrivateKey", formattedEphemeralPrivateKey);
+      console.log('formattedEphemeralPrivateKey', formattedEphemeralPrivateKey);
 
       // Generate the ephemeral public key
       const ephemeralPublicKey = privateKeyToAccount(
         formattedEphemeralPrivateKey
       ).publicKey;
 
-      console.log("ephemeralPublicKey", ephemeralPublicKey);
+      console.log('ephemeralPublicKey', ephemeralPublicKey);
 
       // Generate spending private key for this nonce
       const spendingPrivateKey = generateStealthPrivateKey({
@@ -254,29 +244,29 @@ const Withdraw = () => {
 
       let formattedSpendingPrivateKey;
       if (
-        (typeof spendingPrivateKeyRaw === "object" &&
-          "byteLength" in spendingPrivateKeyRaw) ||
-        (typeof Buffer !== "undefined" &&
+        (typeof spendingPrivateKeyRaw === 'object' &&
+          'byteLength' in spendingPrivateKeyRaw) ||
+        (typeof Buffer !== 'undefined' &&
           Buffer.isBuffer(spendingPrivateKeyRaw))
       ) {
         const spendingPrivateKeyHex = Array.from(
           spendingPrivateKeyRaw as Uint8Array
         )
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join("");
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
         formattedSpendingPrivateKey =
           `0x${spendingPrivateKeyHex}` as `0x${string}`;
-      } else if (typeof spendingPrivateKeyRaw === "string") {
-        const cleanHex = spendingPrivateKeyRaw.replace("0x", "");
+      } else if (typeof spendingPrivateKeyRaw === 'string') {
+        const cleanHex = spendingPrivateKeyRaw.replace('0x', '');
         formattedSpendingPrivateKey = `0x${cleanHex}` as `0x${string}`;
       } else {
         // If we still have an object, try to find the actual key
         console.error(
-          "Unable to extract private key from:",
+          'Unable to extract private key from:',
           spendingPrivateKeyRaw
         );
         throw new Error(
-          "Cannot extract private key from spendingPrivateKey object"
+          'Cannot extract private key from spendingPrivateKey object'
         );
       }
 
@@ -295,8 +285,8 @@ const Withdraw = () => {
     metadata: Record<string, unknown> = {}
   ) => {
     try {
-      console.log("🌟 Requesting gas sponsorship for transaction...");
-      console.log("📋 Multicall data:", {
+      console.log('🌟 Requesting gas sponsorship for transaction...');
+      console.log('📋 Multicall data:', {
         numberOfCalls: multicallData.length,
         calls: multicallData.map((call, index) => ({
           index: index + 1,
@@ -310,9 +300,9 @@ const Withdraw = () => {
       const response = await fetch(
         `${BACKEND_URL}/api/user/${username}/gas-sponsorship`,
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             multicallData,
@@ -324,56 +314,56 @@ const Withdraw = () => {
                 .toString(36)
                 .substr(2, 9)}`,
             },
+            chainId: currentNetwork?.chainId as number,
           }),
         }
       );
 
       const result = await response.json();
-      console.log("📄 Backend response:", result);
+      console.log('📄 Backend response:', result);
 
       if (!response.ok) {
         throw new Error(
-          result.message || result.error || "Gas sponsorship request failed"
+          result.message || result.error || 'Gas sponsorship request failed'
         );
       }
 
       if (!result.success) {
         throw new Error(
-          result.message || "Gas sponsorship service returned failure"
+          result.message || 'Gas sponsorship service returned failure'
         );
       }
 
-      console.log("✅ Gas sponsored transaction completed successfully!");
-      console.log("📊 Transaction details:", result);
-
+      console.log('✅ Gas sponsored transaction completed successfully!');
+      console.log('📊 Transaction details:', result);
       // Handle the backend response structure
-      const txHash = result.data?.transactionHash || "pending";
+      const txHash = result.data?.transactionHash || 'pending';
       const explorerUrl =
         result.data?.executionDetails?.explorerUrl ||
-        `https://testnet.seistream.io/tx/${txHash}`;
+        `${currentNetwork?.explorerUrl}/tx/${txHash}`;
 
       return {
         success: true,
         txHash: txHash,
         blockNumber: result.data?.blockNumber || 0,
-        gasUsed: result.data?.gasUsed || "N/A",
-        gasCost: result.data?.gasCost || "N/A",
+        gasUsed: result.data?.gasUsed || 'N/A',
+        gasCost: result.data?.gasCost || 'N/A',
         explorerUrl: explorerUrl,
         receipt: {
-          status: "success",
+          status: 'success',
           transactionHash: txHash,
           blockNumber: BigInt(result.data?.blockNumber || 0),
           gasUsed: BigInt(result.data?.gasUsed || 0),
         },
         sponsorDetails: {
-          sponsorAddress: result.data?.sponsorAddress || "Unknown",
-          chainName: result.data?.executionDetails?.chainName || "Sei Testnet",
+          sponsorAddress: result.data?.sponsorAddress || 'Unknown',
+          chainName: result.data?.executionDetails?.chainName || 'Sei Testnet',
         },
       };
     } catch (error) {
-      console.error("❌ Gas sponsorship request failed:", error);
+      console.error('❌ Gas sponsorship request failed:', error);
       const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
+        error instanceof Error ? error.message : 'Unknown error occurred';
       throw new Error(`Gas sponsorship failed: ${errorMessage}`);
     }
   };
@@ -382,32 +372,33 @@ const Withdraw = () => {
     index: number,
     nonce: number
   ) => {
+    const currentNetwork = getCurrentNetwork(WHITELISTED_NETWORKS);
     await switchChainAsync({
       chainId: currentNetwork?.chainId as number,
     });
 
     // Set this specific payment as redeeming
-    setRedeemingPayments((prev) => new Set([...prev, index]));
+    setRedeemingPayments(prev => new Set([...prev, index]));
     const payment = tableData[index];
 
     try {
-      console.log("🚀 Starting sponsored redemption process...");
-      console.log("📋 Payment details:", payment);
-      console.log("🔢 Nonce:", nonce);
+      console.log('🚀 Starting sponsored redemption process...');
+      console.log('📋 Payment details:', payment);
+      console.log('🔢 Nonce:', nonce);
 
       // Generate stealth private key (same as before)
       const keys = await generateInitialKeysOnClient([nonce]);
       const spendingPrivateKey = keys[0];
       const stealthAddress = privateKeyToAccount(spendingPrivateKey).address;
 
-      console.log("🔐 Stealth address derived:", stealthAddress);
+      console.log('🔐 Stealth address derived:', stealthAddress);
 
       // Predict Safe address using centralized RPC configuration
       const predictedSafeAddress = await predictSafeAddress(
         stealthAddress,
-        RPC_CONFIG.SEI_TESTNET.primary
+        RPC_CONFIG.ARB_SEPOLIA.primary
       );
-      console.log("🏦 Predicted Safe address:", predictedSafeAddress);
+      console.log('🏦 Predicted Safe address:', predictedSafeAddress);
 
       const predictedSafe = {
         safeAccountConfig: {
@@ -415,70 +406,52 @@ const Withdraw = () => {
           threshold: 1,
         },
         safeDeploymentConfig: {
-          saltNonce: "0",
+          saltNonce: '0',
         },
       };
 
-      const RPC_URL = RPC_CONFIG.SEI_TESTNET.primary;
+      const RPC_URL = currentNetwork?.rpcUrl as string;
 
-      console.log("currentNetwork", currentNetwork);
-
-      // Get custom contract networks configuration for the current network
-      const contractNetworks = getContractNetworks(
-        currentNetwork?.chainId || 1328
-      );
-
-      console.log("🔧 Using custom contract networks for current network:", {
-        chainId: currentNetwork?.chainId || 1328,
-        contractNetworks,
-      });
-
-      console.log({
-        provider: RPC_URL as string,
-        signer: stealthAddress,
-        predictedSafe,
-        contractNetworks,
-      });
+      console.log('currentNetwork', currentNetwork);
 
       const protocolKit = await Safe.init({
         provider: RPC_URL as string,
         signer: stealthAddress,
         predictedSafe,
-        contractNetworks,
       });
 
       const isSafeDeployed = await protocolKit.isSafeDeployed();
-      console.log("isSafeDeployed", isSafeDeployed);
+      console.log('isSafeDeployed', isSafeDeployed);
 
       let deploymentTransaction;
       let safeNonce = 0;
 
       if (!isSafeDeployed) {
-        console.log("🔄 Safe needs to be deployed first");
+        console.log('🔄 Safe needs to be deployed first');
         deploymentTransaction =
           await protocolKit.createSafeDeploymentTransaction();
         console.log(
-          "✅ Safe deployment transaction created",
+          '✅ Safe deployment transaction created',
           deploymentTransaction
         );
       } else {
-        console.log("✅ Safe is already deployed, getting current nonce...");
+        console.log('✅ Safe is already deployed, getting current nonce...');
         // Get the current nonce from the deployed Safe
         if (!publicClient) {
-          throw new Error("Public client not available");
+          throw new Error('Public client not available');
         }
 
         const safeNonceData = encodeFunctionData({
           abi: [
             {
               inputs: [],
-              name: "nonce",
-              outputs: [{ name: "", type: "uint256" }],
-              stateMutability: "view",
-              type: "function",
+              name: 'nonce',
+              outputs: [{ name: '', type: 'uint256' }],
+              stateMutability: 'view',
+              type: 'function',
             },
           ],
-          functionName: "nonce",
+          functionName: 'nonce',
         });
 
         let safeNonceResult;
@@ -488,26 +461,26 @@ const Withdraw = () => {
             data: safeNonceData,
           });
         } catch (error) {
-          console.warn("⚠️ RPC call failed, retrying with delay...", error);
+          console.warn('⚠️ RPC call failed, retrying with delay...', error);
           // Wait a bit and retry
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 1000));
           safeNonceResult = await publicClient.call({
             to: predictedSafeAddress as `0x${string}`,
             data: safeNonceData,
           });
         }
 
-        safeNonce = Number(BigInt(safeNonceResult.data || "0x0"));
-        console.log("🔢 Safe nonce:", safeNonce);
+        safeNonce = Number(BigInt(safeNonceResult.data || '0x0'));
+        console.log('🔢 Safe nonce:', safeNonce);
       }
 
       // Create USDC transfer transaction (same as before)
-      console.log("💸 Creating USDC transfer transaction from Safe...");
+      console.log('💸 Creating USDC transfer transaction from Safe...');
 
       // Create wallet client with spending private key
       const spendingWalletClient = createWalletClient({
         account: privateKeyToAccount(spendingPrivateKey as `0x${string}`),
-        chain: currentChain,
+        chain: baseSepolia,
         transport: http(RPC_URL),
       });
 
@@ -516,16 +489,16 @@ const Withdraw = () => {
         abi: [
           {
             inputs: [
-              { name: "to", type: "address" },
-              { name: "amount", type: "uint256" },
+              { name: 'to', type: 'address' },
+              { name: 'amount', type: 'uint256' },
             ],
-            name: "transfer",
-            outputs: [{ name: "", type: "bool" }],
-            stateMutability: "nonpayable",
-            type: "function",
+            name: 'transfer',
+            outputs: [{ name: '', type: 'bool' }],
+            stateMutability: 'nonpayable',
+            type: 'function',
           },
         ],
-        functionName: "transfer",
+        functionName: 'transfer',
         args: [
           recipientAddress as `0x${string}`,
           parseUnits(payment.amount.toString(), payment.decimals),
@@ -535,10 +508,10 @@ const Withdraw = () => {
       // Build Safe transaction with correct nonce
       const safeTransaction = buildSafeTransaction({
         to: payment.tokenAddress,
-        value: "0",
+        value: '0',
         data: transferData,
         operation: 0,
-        safeTxGas: "0",
+        safeTxGas: '0',
         nonce: safeNonce,
       });
 
@@ -552,39 +525,39 @@ const Withdraw = () => {
         safeTransaction
       );
 
-      console.log("✅ Safe transaction signed successfully");
+      console.log('✅ Safe transaction signed successfully');
 
       // Encode execTransaction call (same as before)
       const execTransactionData = encodeFunctionData({
         abi: SAFE_ABI,
-        functionName: "execTransaction",
+        functionName: 'execTransaction',
         args: [
           safeTransaction.to as `0x${string}`,
-          BigInt(safeTransaction.value || "0"),
+          BigInt(safeTransaction.value || '0'),
           safeTransaction.data as `0x${string}`,
           safeTransaction.operation,
-          BigInt(safeTransaction.safeTxGas || "0"),
-          BigInt(safeTransaction.baseGas || "0"),
-          BigInt(safeTransaction.gasPrice || "0"),
+          BigInt(safeTransaction.safeTxGas || '0'),
+          BigInt(safeTransaction.baseGas || '0'),
+          BigInt(safeTransaction.gasPrice || '0'),
           (safeTransaction.gasToken ||
-            "0x0000000000000000000000000000000000000000") as `0x${string}`,
+            '0x0000000000000000000000000000000000000000') as `0x${string}`,
           (safeTransaction.refundReceiver ||
-            "0x0000000000000000000000000000000000000000") as `0x${string}`,
+            '0x0000000000000000000000000000000000000000') as `0x${string}`,
           signature as `0x${string}`,
         ],
       });
 
-      console.log("✅ execTransaction data encoded");
+      console.log('✅ execTransaction data encoded');
 
       console.log(
-        "🔄 Deploying Safe AND executing transfer in single multicall..."
+        '🔄 Deploying Safe AND executing transfer in single multicall...'
       );
 
       let multicallData = [];
 
       if (isSafeDeployed) {
         // Safe is already deployed, only do the transfer
-        console.log("✅ Safe is already deployed - executing transfer only...");
+        console.log('✅ Safe is already deployed - executing transfer only...');
         multicallData = [
           {
             target: predictedSafeAddress,
@@ -595,7 +568,7 @@ const Withdraw = () => {
       } else if (deploymentTransaction) {
         // Safe needs to be deployed, do both deployment and transfer
         console.log(
-          "🔄 Safe not deployed - Deploying Safe AND executing transfer in single multicall..."
+          '🔄 Safe not deployed - Deploying Safe AND executing transfer in single multicall...'
         );
         multicallData = [
           // Step 1: Deploy the Safe
@@ -612,25 +585,27 @@ const Withdraw = () => {
           },
         ];
       } else {
-        throw new Error("Failed to create Safe deployment transaction");
+        throw new Error('Failed to create Safe deployment transaction');
       }
 
-      console.log("📋 Combined multicall data:", {
+      console.log('📋 Combined multicall data:', {
         multicallLength: multicallData.length,
         calls: multicallData.map((call, i) => ({
           index: i,
           target: call.target,
           allowFailure: call.allowFailure,
           dataLength: call.callData.length,
-          operation: i === 0 ? "Safe Deployment" : "USDC Transfer",
+          operation: i === 0 ? 'Safe Deployment' : 'USDC Transfer',
         })),
       });
+
+      console.log('multicallData', multicallData);
 
       const sponsorshipResult = await executeTransactionWithGasSponsorship(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         multicallData as any,
         {
-          operationType: "safe_deployment_and_transfer",
+          operationType: 'safe_deployment_and_transfer',
           paymentIndex: index,
           nonce: nonce,
           stealthAddress: stealthAddress,
@@ -643,30 +618,30 @@ const Withdraw = () => {
       );
 
       console.log(
-        "✅ Safe deployment AND transfer completed in single transaction:",
+        '✅ Safe deployment AND transfer completed in single transaction:',
         sponsorshipResult.txHash
       );
 
-      console.log("✅ Gas sponsored transaction completed successfully!");
+      console.log('✅ Gas sponsored transaction completed successfully!');
 
       // Verify the transfer worked (enhanced with sponsorship details)
-      console.log("🔍 Verifying USDT transfer results...");
+      console.log('🔍 Verifying USDT transfer results...');
 
-      let recipientBalanceFormatted = "0.00";
+      let recipientBalanceFormatted = '0.00';
 
       try {
         // Check recipient balance
         const recipientBalanceData = encodeFunctionData({
           abi: USDC_ABI,
-          functionName: "balanceOf",
+          functionName: 'balanceOf',
           args: [recipientAddress as `0x${string}`],
         });
 
         if (!publicClient) {
-          throw new Error("Public client not available");
+          throw new Error('Public client not available');
         }
 
-        console.log("🔍 Checking recipient balance at:", {
+        console.log('🔍 Checking recipient balance at:', {
           recipientAddress,
           tokenAddress: payment.tokenAddress,
         });
@@ -676,25 +651,25 @@ const Withdraw = () => {
           data: recipientBalanceData,
         });
 
-        const recipientBalance = BigInt(recipientBalanceResult.data || "0x0");
+        const recipientBalance = BigInt(recipientBalanceResult.data || '0x0');
         recipientBalanceFormatted = (
           Number(recipientBalance) / Math.pow(10, payment.decimals)
         ).toFixed(2);
 
-        console.log("✅ Balance check successful:", {
+        console.log('✅ Balance check successful:', {
           recipientBalance: recipientBalance.toString(),
           recipientBalanceFormatted,
         });
       } catch (balanceError) {
         console.warn(
-          "⚠️ Balance verification failed, but transaction was successful:",
+          '⚠️ Balance verification failed, but transaction was successful:',
           balanceError
         );
         // Don't fail the entire process if balance check fails
         // The transaction was successful, so we'll continue
       }
 
-      console.log("✅ Gas sponsored transfer verification:", {
+      console.log('✅ Gas sponsored transfer verification:', {
         recipient: recipientAddress,
         receivedAmount: `${recipientBalanceFormatted} ${payment.token}`,
         transactionHash: sponsorshipResult.txHash,
@@ -710,7 +685,7 @@ const Withdraw = () => {
       setSelectedRows(Array.from(newRedeemed));
 
       // Remove from redeeming state
-      setRedeemingPayments((prev) => {
+      setRedeemingPayments(prev => {
         const newSet = new Set(prev);
         newSet.delete(index);
         return newSet;
@@ -718,7 +693,7 @@ const Withdraw = () => {
 
       // Close dialog and reset state
       setIsWithdrawDialogOpen(false);
-      setRecipientAddress("");
+      setRecipientAddress('');
       setWithdrawAmount(0);
       setSelectedWithdrawal(null);
 
@@ -750,21 +725,21 @@ const Withdraw = () => {
         },
       };
     } catch (error) {
-      console.error("❌ Sponsored redemption failed:", error);
+      console.error('❌ Sponsored redemption failed:', error);
 
       // Log detailed error information
       if (error instanceof Error) {
-        console.error("Error details:", {
+        console.error('Error details:', {
           message: error.message,
           stack: error.stack,
           name: error.name,
         });
       } else {
-        console.error("Unknown error type:", typeof error, error);
+        console.error('Unknown error type:', typeof error, error);
       }
 
       // Remove from redeeming state on error
-      setRedeemingPayments((prev) => {
+      setRedeemingPayments(prev => {
         const newSet = new Set(prev);
         newSet.delete(index);
         return newSet;
@@ -782,18 +757,18 @@ const Withdraw = () => {
     selectedIndices: number[],
     recipientAddress: string
   ) => {
-    console.log("🚀 Starting batch redemption process...");
-    console.log("📋 Selected indices:", selectedIndices);
-    console.log("🎯 Recipient address:", recipientAddress);
+    console.log('🚀 Starting batch redemption process...');
+    console.log('📋 Selected indices:', selectedIndices);
+    console.log('🎯 Recipient address:', recipientAddress);
 
     // Set all selected payments as redeeming
-    setRedeemingPayments((prev) => new Set([...prev, ...selectedIndices]));
+    setRedeemingPayments(prev => new Set([...prev, ...selectedIndices]));
     setIsBatchProcessing(true);
 
     try {
       // Generate stealth keys for all selected payments
-      const nonces = selectedIndices.map((index) => tableData[index].nonce);
-      console.log("🔢 Nonces for batch:", nonces);
+      const nonces = selectedIndices.map(index => tableData[index].nonce);
+      console.log('🔢 Nonces for batch:', nonces);
 
       const keys = await generateInitialKeysOnClient(nonces);
       console.log(`🔐 Generated ${keys.length} stealth keys`);
@@ -818,7 +793,7 @@ const Withdraw = () => {
         // Predict Safe address
         const predictedSafeAddress = await predictSafeAddress(
           stealthAddress,
-          RPC_CONFIG.SEI_TESTNET.primary
+          RPC_CONFIG.ARB_SEPOLIA.primary
         );
         console.log(`   - Predicted Safe: ${predictedSafeAddress}`);
 
@@ -829,20 +804,15 @@ const Withdraw = () => {
             threshold: 1,
           },
           safeDeploymentConfig: {
-            saltNonce: "0",
+            saltNonce: '0',
           },
         };
 
-        const RPC_URL = RPC_CONFIG.SEI_TESTNET.primary;
-        const contractNetworks = getContractNetworks(
-          currentNetwork?.chainId || 1328
-        );
-
+        const RPC_URL = RPC_CONFIG.ARB_SEPOLIA.primary;
         const protocolKit = await Safe.init({
           provider: RPC_URL,
           signer: stealthAddress,
           predictedSafe,
-          contractNetworks,
         });
 
         // Check if Safe is deployed
@@ -853,26 +823,26 @@ const Withdraw = () => {
         let safeNonce = 0;
 
         if (!isSafeDeployed) {
-          console.log("   - Creating Safe deployment transaction...");
+          console.log('   - Creating Safe deployment transaction...');
           deploymentTransaction =
             await protocolKit.createSafeDeploymentTransaction();
         } else {
-          console.log("   - Getting Safe nonce...");
+          console.log('   - Getting Safe nonce...');
           if (!publicClient) {
-            throw new Error("Public client not available");
+            throw new Error('Public client not available');
           }
 
           const safeNonceData = encodeFunctionData({
             abi: [
               {
                 inputs: [],
-                name: "nonce",
-                outputs: [{ name: "", type: "uint256" }],
-                stateMutability: "view",
-                type: "function",
+                name: 'nonce',
+                outputs: [{ name: '', type: 'uint256' }],
+                stateMutability: 'view',
+                type: 'function',
               },
             ],
-            functionName: "nonce",
+            functionName: 'nonce',
           });
 
           const safeNonceResult = await publicClient.call({
@@ -880,14 +850,14 @@ const Withdraw = () => {
             data: safeNonceData,
           });
 
-          safeNonce = Number(BigInt(safeNonceResult.data || "0x0"));
+          safeNonce = Number(BigInt(safeNonceResult.data || '0x0'));
           console.log(`   - Safe nonce: ${safeNonce}`);
         }
 
         // Create wallet client and transfer data
         const spendingWalletClient = createWalletClient({
           account: privateKeyToAccount(spendingPrivateKey as `0x${string}`),
-          chain: currentChain,
+          chain: baseSepolia,
           transport: http(RPC_URL),
         });
 
@@ -895,16 +865,16 @@ const Withdraw = () => {
           abi: [
             {
               inputs: [
-                { name: "to", type: "address" },
-                { name: "amount", type: "uint256" },
+                { name: 'to', type: 'address' },
+                { name: 'amount', type: 'uint256' },
               ],
-              name: "transfer",
-              outputs: [{ name: "", type: "bool" }],
-              stateMutability: "nonpayable",
-              type: "function",
+              name: 'transfer',
+              outputs: [{ name: '', type: 'bool' }],
+              stateMutability: 'nonpayable',
+              type: 'function',
             },
           ],
-          functionName: "transfer",
+          functionName: 'transfer',
           args: [
             recipientAddress as `0x${string}`,
             parseUnits(payment.amount.toString(), payment.decimals),
@@ -914,10 +884,10 @@ const Withdraw = () => {
         // Build and sign Safe transaction
         const safeTransaction = buildSafeTransaction({
           to: payment.tokenAddress,
-          value: "0",
+          value: '0',
           data: transferData,
           operation: 0,
-          safeTxGas: "0",
+          safeTxGas: '0',
           nonce: safeNonce,
         });
 
@@ -933,19 +903,19 @@ const Withdraw = () => {
         // Encode execTransaction call
         const execTransactionData = encodeFunctionData({
           abi: SAFE_ABI,
-          functionName: "execTransaction",
+          functionName: 'execTransaction',
           args: [
             safeTransaction.to as `0x${string}`,
-            BigInt(safeTransaction.value || "0"),
+            BigInt(safeTransaction.value || '0'),
             safeTransaction.data as `0x${string}`,
             safeTransaction.operation,
-            BigInt(safeTransaction.safeTxGas || "0"),
-            BigInt(safeTransaction.baseGas || "0"),
-            BigInt(safeTransaction.gasPrice || "0"),
+            BigInt(safeTransaction.safeTxGas || '0'),
+            BigInt(safeTransaction.baseGas || '0'),
+            BigInt(safeTransaction.gasPrice || '0'),
             (safeTransaction.gasToken ||
-              "0x0000000000000000000000000000000000000000") as `0x${string}`,
+              '0x0000000000000000000000000000000000000000') as `0x${string}`,
             (safeTransaction.refundReceiver ||
-              "0x0000000000000000000000000000000000000000") as `0x${string}`,
+              '0x0000000000000000000000000000000000000000') as `0x${string}`,
             signature as `0x${string}`,
           ],
         });
@@ -978,7 +948,7 @@ const Withdraw = () => {
         });
       }
 
-      console.log("\n📋 Batch multicall data prepared:", {
+      console.log('\n📋 Batch multicall data prepared:', {
         totalPayments: selectedIndices.length,
         totalCalls: allMulticallData.length,
         calls: allMulticallData.map((call, i) => ({
@@ -990,13 +960,13 @@ const Withdraw = () => {
       });
 
       // Execute batch transaction with gas sponsorship
-      console.log("🌟 Executing batch transaction with gas sponsorship...");
+      console.log('🌟 Executing batch transaction with gas sponsorship...');
 
       const sponsorshipResult = await executeTransactionWithGasSponsorship(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         allMulticallData as any,
         {
-          operationType: "batch_redemption",
+          operationType: 'batch_redemption',
           paymentCount: selectedIndices.length,
           nonces: nonces,
           recipientAddress: recipientAddress,
@@ -1006,18 +976,18 @@ const Withdraw = () => {
         }
       );
 
-      console.log("✅ Batch redemption completed successfully!");
+      console.log('✅ Batch redemption completed successfully!');
 
       // Update UI state
       const newSelectedRows = selectedRows.filter(
-        (id) => !selectedIndices.includes(id - 1)
+        id => !selectedIndices.includes(id - 1)
       );
       setSelectedRows(newSelectedRows);
 
       // Remove from redeeming state
-      setRedeemingPayments((prev) => {
+      setRedeemingPayments(prev => {
         const newSet = new Set(prev);
-        selectedIndices.forEach((index) => newSet.delete(index));
+        selectedIndices.forEach(index => newSet.delete(index));
         return newSet;
       });
 
@@ -1047,23 +1017,23 @@ const Withdraw = () => {
         },
       };
     } catch (error) {
-      console.error("❌ Batch redemption failed:", error);
+      console.error('❌ Batch redemption failed:', error);
 
       // Log detailed error information
       if (error instanceof Error) {
-        console.error("Error details:", {
+        console.error('Error details:', {
           message: error.message,
           stack: error.stack,
           name: error.name,
         });
       } else {
-        console.error("Unknown error type:", typeof error, error);
+        console.error('Unknown error type:', typeof error, error);
       }
 
       // Remove from redeeming state on error
-      setRedeemingPayments((prev) => {
+      setRedeemingPayments(prev => {
         const newSet = new Set(prev);
-        selectedIndices.forEach((index) => newSet.delete(index));
+        selectedIndices.forEach(index => newSet.delete(index));
         return newSet;
       });
 
@@ -1078,11 +1048,13 @@ const Withdraw = () => {
 
   const [dialogError, setDialogError] = useState<string | null>(null);
 
-  const handleConfirmWithdrawal = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleConfirmWithdrawal = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
 
     if (!recipientAddress.trim()) {
-      setDialogError("Please enter a recipient address");
+      setDialogError('Please enter a recipient address');
       return;
     }
 
@@ -1094,54 +1066,54 @@ const Withdraw = () => {
       if (selectedWithdrawal) {
         // Single withdrawal
         if (!selectedWithdrawal) {
-          setDialogError("No withdrawal selected");
+          setDialogError('No withdrawal selected');
           return;
         }
 
         // Find the index of the selected withdrawal in tableData
         const withdrawalIndex = tableData.findIndex(
-          (w) => w.id === selectedWithdrawal.id
+          w => w.id === selectedWithdrawal.id
         );
         if (withdrawalIndex === -1) {
-          throw new Error("Selected withdrawal not found");
+          throw new Error('Selected withdrawal not found');
         }
 
         await processSingleRedemptionWithSponsorship(
           withdrawalIndex,
           selectedWithdrawal.nonce
         );
-        console.log("Single withdrawal successful!");
+        console.log('Single withdrawal successful!');
 
         // Close dialog and reset state on success
         setIsWithdrawDialogOpen(false);
-        setRecipientAddress("");
+        setRecipientAddress('');
         setWithdrawAmount(0);
         setSelectedWithdrawal(null);
         setDialogError(null);
       } else if (selectedRows.length > 0) {
         // Batch withdrawal
-        const selectedIndices = selectedRows.map((id) => id - 1);
+        const selectedIndices = selectedRows.map(id => id - 1);
 
         await processBatchRedemptionWithSponsorship(
           selectedIndices,
           recipientAddress
         );
-        console.log("Batch withdrawal successful!");
+        console.log('Batch withdrawal successful!');
 
         // Close dialog and reset state on success
         setIsWithdrawDialogOpen(false);
-        setRecipientAddress("");
+        setRecipientAddress('');
         setWithdrawAmount(0);
         setSelectedRows([]);
         setDialogError(null);
       } else {
-        setDialogError("No withdrawal selected");
+        setDialogError('No withdrawal selected');
         return;
       }
     } catch (error) {
-      console.error("Withdrawal failed:", error);
+      console.error('Withdrawal failed:', error);
       const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+        error instanceof Error ? error.message : 'Unknown error';
       setDialogError(`An error occurred: ${errorMessage}`);
     } finally {
       setIsWithdrawing(false);
@@ -1150,7 +1122,7 @@ const Withdraw = () => {
 
   const handleCancelWithdrawal = () => {
     setIsWithdrawDialogOpen(false);
-    setRecipientAddress("");
+    setRecipientAddress('');
     setWithdrawAmount(0);
     setSelectedWithdrawal(null);
     setDialogError(null);
@@ -1160,7 +1132,7 @@ const Withdraw = () => {
     selectedRows.length === tableData.length && tableData.length > 0;
 
   const selectedTotal = tableData
-    .filter((row) => selectedRows.includes(row.id))
+    .filter(row => selectedRows.includes(row.id))
     .reduce((sum, row) => sum + row.amount, 0);
 
   // Show loading state
@@ -1229,7 +1201,7 @@ const Withdraw = () => {
             <p className="text-sm font-mono">
               <span className="font-medium">{selectedRows.length}</span>
               <span className="text-muted-foreground ml-1">
-                {selectedRows.length === 1 ? "item" : "items"} • $
+                {selectedRows.length === 1 ? 'item' : 'items'} • $
                 {selectedTotal.toFixed(2)} total
               </span>
             </p>
@@ -1256,7 +1228,7 @@ const Withdraw = () => {
                 disabled={selectedRows.length === 0 || isBatchProcessing}
                 className="rounded-none"
               >
-                {isBatchProcessing ? "Processing..." : "Withdraw Selected"}
+                {isBatchProcessing ? 'Processing...' : 'Withdraw Selected'}
               </Button>
             </div>
           </div>
@@ -1288,8 +1260,8 @@ const Withdraw = () => {
                     key={row.id}
                     className={
                       index === currentData.length - 1
-                        ? "border-b-0"
-                        : "border-border/50"
+                        ? 'border-b-0'
+                        : 'border-border/50'
                     }
                   >
                     <TableCell>
@@ -1372,7 +1344,7 @@ const Withdraw = () => {
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-6">
             <div className="text-sm text-muted-foreground font-mono">
-              Showing {startIndex + 1} to {Math.min(endIndex, tableData.length)}{" "}
+              Showing {startIndex + 1} to {Math.min(endIndex, tableData.length)}{' '}
               of {tableData.length} results
             </div>
             <div className="flex items-center gap-2">
@@ -1397,10 +1369,10 @@ const Withdraw = () => {
 
               <div className="flex items-center gap-1">
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (page) => (
+                  page => (
                     <Button
                       key={page}
-                      variant={currentPage === page ? "default" : "outline"}
+                      variant={currentPage === page ? 'default' : 'outline'}
                       size="sm"
                       className="rounded-none font-mono w-8 h-8 p-0"
                       onClick={() => handlePageChange(page)}
@@ -1444,8 +1416,8 @@ const Withdraw = () => {
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-muted-foreground" />
               {selectedWithdrawal
-                ? "Confirm Single Withdrawal"
-                : "Confirm Batch Withdrawal"}
+                ? 'Confirm Single Withdrawal'
+                : 'Confirm Batch Withdrawal'}
             </DialogTitle>
           </DialogHeader>
 
@@ -1456,7 +1428,7 @@ const Withdraw = () => {
                 id="recipient-address"
                 placeholder="0x..."
                 value={recipientAddress}
-                onChange={(e) => setRecipientAddress(e.target.value)}
+                onChange={e => setRecipientAddress(e.target.value)}
                 className="font-mono"
               />
             </div>
@@ -1527,10 +1499,10 @@ const Withdraw = () => {
               }
             >
               {isWithdrawing
-                ? "Processing..."
+                ? 'Processing...'
                 : selectedWithdrawal
-                ? "Confirm Single Withdrawal"
-                : "Confirm Batch Withdrawal"}
+                  ? 'Confirm Single Withdrawal'
+                  : 'Confirm Batch Withdrawal'}
             </Button>
           </DialogFooter>
         </DialogContent>

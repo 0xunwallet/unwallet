@@ -1,27 +1,27 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-import axios from "axios";
-import { BACKEND_URL } from "./constants";
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import axios from 'axios';
+import { BACKEND_URL } from './constants';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 // Authentication utilities
-export const AUTH_STORAGE_KEY = "unwallet_auth_state";
+export const AUTH_STORAGE_KEY = 'unwallet_auth_state';
 
 export interface AuthState {
   isLoggedIn: boolean;
   user?: {
     username: string;
-    walletType: "personal" | "merchant";
+    walletType: 'personal' | 'merchant';
     websiteUri?: string;
     selectedTokens: string[];
   };
 }
 
 export const getAuthState = (): AuthState => {
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return { isLoggedIn: false };
   }
 
@@ -29,22 +29,22 @@ export const getAuthState = (): AuthState => {
     const stored = localStorage.getItem(AUTH_STORAGE_KEY);
     return stored ? JSON.parse(stored) : { isLoggedIn: false };
   } catch (error) {
-    console.error("Error reading auth state:", error);
+    console.error('Error reading auth state:', error);
     return { isLoggedIn: false };
   }
 };
 
 export const setAuthState = (state: AuthState): void => {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
 
   try {
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(state));
   } catch (error) {
-    console.error("Error setting auth state:", error);
+    console.error('Error setting auth state:', error);
   }
 };
 
-export const login = (userData: AuthState["user"]): void => {
+export const login = (userData: AuthState['user']): void => {
   setAuthState({ isLoggedIn: true, user: userData });
 };
 
@@ -64,7 +64,7 @@ export const getUsername = async (address: string) => {
 
     return data?.data?.username;
   } catch (error) {
-    console.error("Error fetching username:", error);
+    console.error('Error fetching username:', error);
   }
 };
 

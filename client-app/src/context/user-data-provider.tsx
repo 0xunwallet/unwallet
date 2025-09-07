@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { useAccount, usePublicClient } from "wagmi";
-import { formatUnits, parseAbi } from "viem";
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useAccount, usePublicClient } from 'wagmi';
+import { formatUnits, parseAbi } from 'viem';
 import {
   getAuthState,
   getUsername,
   type BalanceData,
   type FundingStatsResponse,
-} from "@/lib/utils";
-import { BACKEND_URL } from "@/lib/constants";
-import { usePrivy } from "@privy-io/react-auth";
+} from '@/lib/utils';
+import { BACKEND_URL } from '@/lib/constants';
+import { usePrivy } from '@privy-io/react-auth';
 
 interface UserData {
   username: string | null;
@@ -38,7 +38,7 @@ const UserDataContext = createContext<UserDataContextType | undefined>(
 export const useUserData = () => {
   const context = useContext(UserDataContext);
   if (context === undefined) {
-    throw new Error("useUserData must be used within a UserDataProvider");
+    throw new Error('useUserData must be used within a UserDataProvider');
   }
   return context;
 };
@@ -49,13 +49,13 @@ interface UserDataProviderProps {
 
 // ERC20 ABI for the functions we need
 const erc20Abi = parseAbi([
-  "function balanceOf(address owner) view returns (uint256)",
-  "function decimals() view returns (uint8)",
-  "function symbol() view returns (string)",
+  'function balanceOf(address owner) view returns (uint256)',
+  'function decimals() view returns (uint8)',
+  'function symbol() view returns (string)',
 ]);
 
 // Common Multicall3 address (might work on Sei)
-const MULTICALL3_ADDRESS = "0xcA11bde05977b3631167028862bE2a173976CA11";
+const MULTICALL3_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
 
 export const UserDataProvider: React.FC<UserDataProviderProps> = ({
   children,
@@ -85,7 +85,7 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({
       return;
     }
 
-    setUserData((prev) => ({ ...prev, isLoading: true, error: null }));
+    setUserData(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
       const username = await getUsername(address);
@@ -99,30 +99,38 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({
         username: null,
         isLoading: false,
         error:
-          error instanceof Error ? error.message : "Failed to fetch username",
+          error instanceof Error ? error.message : 'Failed to fetch username',
       });
     }
   };
 
   const fetchWithdrawals = async () => {
     if (!userData.username || !publicClient || !authState.isLoggedIn) {
-      setWithdrawalData({ balanceData: [], isLoading: false, error: null });
+      setWithdrawalData({
+        balanceData: [],
+        isLoading: false,
+        error: null,
+      });
       return;
     }
 
-    setWithdrawalData((prev) => ({ ...prev, isLoading: true, error: null }));
+    setWithdrawalData(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
       const response = await fetch(
         `${BACKEND_URL}/api/user/${userData.username}/funding-stats`
       );
       const data: FundingStatsResponse = await response.json();
-      console.log("Funding stats response:", data);
+      console.log('Funding stats response:', data);
 
       const fundedAddresses = data.data.fundedAddresses || [];
       if (fundedAddresses.length === 0) {
-        console.log("No funded addresses found.");
-        setWithdrawalData({ balanceData: [], isLoading: false, error: null });
+        console.log('No funded addresses found.');
+        setWithdrawalData({
+          balanceData: [],
+          isLoading: false,
+          error: null,
+        });
         return;
       }
 
@@ -175,22 +183,22 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({
       );
 
       // Use multicall to fetch all token data
-      const contracts = addressTokenPairs.flatMap((pair) => [
+      const contracts = addressTokenPairs.flatMap(pair => [
         {
           address: pair.tokenAddress as `0x${string}`,
           abi: erc20Abi,
-          functionName: "balanceOf",
+          functionName: 'balanceOf',
           args: [pair.walletAddress as `0x${string}`],
         },
         {
           address: pair.tokenAddress as `0x${string}`,
           abi: erc20Abi,
-          functionName: "decimals",
+          functionName: 'decimals',
         },
         {
           address: pair.tokenAddress as `0x${string}`,
           abi: erc20Abi,
-          functionName: "symbol",
+          functionName: 'symbol',
         },
       ]);
 
@@ -200,7 +208,7 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({
         multicallAddress: MULTICALL3_ADDRESS as `0x${string}`,
       });
 
-      console.log("✅ Multicall successful");
+      console.log('✅ Multicall successful');
 
       // Process multicall results
       const finalBalanceData: BalanceData[] = [];
@@ -212,9 +220,9 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({
         const originalPair = addressTokenPairs[i];
 
         if (
-          balanceResult?.status === "success" &&
-          decimalsResult?.status === "success" &&
-          symbolResult?.status === "success"
+          balanceResult?.status === 'success' &&
+          decimalsResult?.status === 'success' &&
+          symbolResult?.status === 'success'
         ) {
           const rawBalance = BigInt(balanceResult.result as string | number);
           const decimals = decimalsResult.result as number;
@@ -261,14 +269,14 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({
         `✅ Balance check complete. Found ${finalBalanceData.length} addresses with balances.`
       );
     } catch (error) {
-      console.error("Error fetching withdrawals:", error);
+      console.error('Error fetching withdrawals:', error);
       setWithdrawalData({
         balanceData: [],
         isLoading: false,
         error:
           error instanceof Error
             ? error.message
-            : "Failed to fetch withdrawals",
+            : 'Failed to fetch withdrawals',
       });
     }
   };

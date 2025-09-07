@@ -1,8 +1,8 @@
-"use client";
-import Image from "next/image";
-import Link from "next/link";
-import React from "react";
-import { Button } from "./ui/button";
+'use client';
+import Image from 'next/image';
+import Link from 'next/link';
+import React from 'react';
+import { Button } from './ui/button';
 import {
   LogOut,
   Wallet,
@@ -11,7 +11,7 @@ import {
   User,
   Check,
   ExternalLink,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,18 +19,18 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { getAddressExplorerUrl } from "@/lib/constants";
-import { type AuthState } from "@/lib/utils";
-import { useUser } from "@/hooks/use-user-data";
-import { UsernameSkeleton } from "./ui/loading-skeletons";
-import { usePrivy } from "@privy-io/react-auth";
+} from './ui/dropdown-menu';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { getAddressExplorerUrl } from '@/lib/constants';
+import { type AuthState } from '@/lib/utils';
+import { useUser } from '@/hooks/use-user-data';
+import { UsernameSkeleton } from './ui/loading-skeletons';
+import { usePrivy } from '@privy-io/react-auth';
 
 interface NavbarProps {
   onLogout: () => void;
-  user?: AuthState["user"];
+  user?: AuthState['user'];
 }
 
 const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
@@ -38,7 +38,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
   const [copied, setCopied] = React.useState(false);
   const { user } = usePrivy();
 
-  const walletAddress = user?.wallet?.address || "";
+  const walletAddress = user?.wallet?.address || '';
   const shortAddress = `${walletAddress.slice(0, 6)}...${walletAddress.slice(
     -4
   )}`;
@@ -54,16 +54,16 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
 
   const navItems = [
     {
-      label: "Withdraw",
-      href: "/",
+      label: 'Withdraw',
+      href: '/',
     },
     {
-      label: "Dashboard",
-      href: "/dashboard",
+      label: 'Dashboard',
+      href: '/dashboard',
     },
     {
-      label: "Revenue",
-      href: "/revenue",
+      label: 'Revenue',
+      href: '/revenue',
     },
   ];
 
@@ -82,13 +82,13 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
 
       <div className="md:max-w-6xl w-full flex items-center justify-between">
         <nav className="flex items-center gap-6">
-          {navItems.map((item) => (
+          {navItems.map(item => (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-2 text-primary transition-colors hover:text-primary/80 hover:font-mono",
-                isActive(item.href) ? "font-mono font-semibold" : ""
+                'flex items-center gap-2 text-primary transition-colors hover:text-primary/80 hover:font-mono',
+                isActive(item.href) ? 'font-mono font-semibold' : ''
               )}
             >
               <span>{item.label}</span>

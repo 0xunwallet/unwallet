@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from 'next/image';
 
 interface GetStartedProps {
   onSignIn: () => void;
@@ -64,8 +64,8 @@ const GetStarted: React.FC<GetStartedProps> = ({
                       </div>
                     </div>
                     <p className="text-muted-foreground text-sm leading-relaxed">
-                      Set up a new personal or merchant wallet with stealth
-                      address capabilities
+                      Set up a new personal or merchant/agent wallet with
+                      stealth address capabilities
                     </p>
                   </div>
                 </button>
@@ -105,21 +105,21 @@ const GetStarted: React.FC<GetStartedProps> = ({
               </div>
 
               <p className="text-muted-foreground text-xs text-center">
-                By using Unwallet, you agree to the{" "}
+                By using Unwallet, you agree to the{' '}
                 <a
                   href="#"
                   className="text-primary hover:text-primary/80 transition-colors"
                 >
                   Terms of Service
-                </a>{" "}
-                and{" "}
+                </a>{' '}
+                and{' '}
                 <a
                   href="#"
                   className="text-primary hover:text-primary/80 transition-colors"
                 >
                   Privacy Policy
                 </a>
-                , including{" "}
+                , including{' '}
                 <a
                   href="#"
                   className="text-primary hover:text-primary/80 transition-colors"

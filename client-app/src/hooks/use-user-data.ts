@@ -1,4 +1,4 @@
-import { useUserData } from "@/context/user-data-provider";
+import { useUserData } from '@/context/user-data-provider';
 
 export const useUser = () => {
   const { userData, withdrawalData, refetchUsername, refetchWithdrawals } =

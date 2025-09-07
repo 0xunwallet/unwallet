@@ -33,7 +33,7 @@ A custom hook that provides easy access to user data with additional utility met
 ### Basic Usage
 
 ```tsx
-import { useUser } from "@/hooks/use-user-data";
+import { useUser } from '@/hooks/use-user-data';
 
 const MyComponent = () => {
   const { username, isLoading, error } = useUser();
@@ -48,8 +48,8 @@ const MyComponent = () => {
 ### With Skeleton Loading
 
 ```tsx
-import { useUser } from "@/hooks/use-user-data";
-import { UsernameSkeleton } from "@/components/ui/loading-skeletons";
+import { useUser } from '@/hooks/use-user-data';
+import { UsernameSkeleton } from '@/components/ui/loading-skeletons';
 
 const MyComponent = () => {
   const { username, isLoading } = useUser();
@@ -63,8 +63,8 @@ const MyComponent = () => {
 ### Error Handling with Retry
 
 ```tsx
-import { useUser } from "@/hooks/use-user-data";
-import { Button } from "@/components/ui/button";
+import { useUser } from '@/hooks/use-user-data';
+import { Button } from '@/components/ui/button';
 
 const MyComponent = () => {
   const { username, error, refetch, hasError } = useUser();

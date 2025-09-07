@@ -1,32 +1,32 @@
-import { useState, useEffect } from "react";
-import { usePrivy, useLogin } from "@privy-io/react-auth";
+import { useState, useEffect } from 'react';
+import { usePrivy, useLogin } from '@privy-io/react-auth';
 import {
   generateKeysFromSignature,
   extractViewingPrivateKeyNode,
-} from "@fluidkey/stealth-account-kit";
-import { useAccount, useWalletClient } from "wagmi";
-import { secp256k1 } from "ethereum-cryptography/secp256k1";
-import axios from "axios";
+} from '@fluidkey/stealth-account-kit';
+import { useAccount, useWalletClient } from 'wagmi';
+import { secp256k1 } from 'ethereum-cryptography/secp256k1';
+import axios from 'axios';
 import {
   BACKEND_URL,
   WHITELISTED_NETWORKS,
   STEALTH_ADDRESS_GENERATION_MESSAGE,
-} from "@/lib/constants";
-import { login as saveAuthState } from "@/lib/utils";
-import { useUser } from "./use-user-data";
+} from '@/lib/constants';
+import { login as saveAuthState } from '@/lib/utils';
+import { useUser } from './use-user-data';
 
 interface FormData {
   username: string;
   websiteUri: string;
-  walletType: "personal" | "merchant";
+  walletType: 'personal' | 'merchant';
 }
 
-const FORM_DATA_KEY = "register_form_data";
-const SELECTED_TOKENS_KEY = "register_selected_tokens";
+const FORM_DATA_KEY = 'register_form_data';
+const SELECTED_TOKENS_KEY = 'register_selected_tokens';
 
 export const useRegisterForm = () => {
   const [selectedTokens, setSelectedTokens] = useState<Set<string>>(
-    new Set(["sei-testnet-usdc"])
+    new Set(['sei-testnet-usdc'])
   );
 
   const { refetchWithdrawals, refetch } = useUser();
@@ -56,9 +56,9 @@ export const useRegisterForm = () => {
     message: string;
   } | null>(null);
   const [formData, setFormData] = useState<FormData>({
-    username: "",
-    websiteUri: "",
-    walletType: "personal",
+    username: '',
+    websiteUri: '',
+    walletType: 'personal',
   });
 
   const { authenticated, ready, user, logout } = usePrivy();
@@ -74,7 +74,7 @@ export const useRegisterForm = () => {
         const parsedFormData = JSON.parse(savedFormData);
         setFormData(parsedFormData);
       } catch (error) {
-        console.error("Error parsing saved form data:", error);
+        console.error('Error parsing saved form data:', error);
       }
     }
 
@@ -83,7 +83,7 @@ export const useRegisterForm = () => {
         const parsedSelectedTokens = JSON.parse(savedSelectedTokens);
         setSelectedTokens(new Set(parsedSelectedTokens));
       } catch (error) {
-        console.error("Error parsing saved selected tokens:", error);
+        console.error('Error parsing saved selected tokens:', error);
       }
     }
   }, []);
@@ -92,11 +92,11 @@ export const useRegisterForm = () => {
     localStorage.removeItem(FORM_DATA_KEY);
     localStorage.removeItem(SELECTED_TOKENS_KEY);
     setFormData({
-      username: "",
-      websiteUri: "",
-      walletType: "personal",
+      username: '',
+      websiteUri: '',
+      walletType: 'personal',
     });
-    setSelectedTokens(new Set(["sei-testnet-usdc"]));
+    setSelectedTokens(new Set(['sei-testnet-usdc']));
   };
 
   // Remove the login hook since user is already authenticated
@@ -115,7 +115,7 @@ export const useRegisterForm = () => {
   const validateWebsiteUri = (uri: string) => {
     try {
       const url = new URL(uri);
-      return url.protocol === "https:" && uri.trim().length > 0;
+      return url.protocol === 'https:' && uri.trim().length > 0;
     } catch {
       return false;
     }
@@ -149,12 +149,12 @@ export const useRegisterForm = () => {
     );
   };
 
-  const handleWalletTypeChange = (walletType: "personal" | "merchant") => {
+  const handleWalletTypeChange = (walletType: 'personal' | 'merchant') => {
     const newFormData = {
       ...formData,
       walletType,
       // Clear websiteUri if switching to personal
-      websiteUri: walletType === "personal" ? "" : formData.websiteUri,
+      websiteUri: walletType === 'personal' ? '' : formData.websiteUri,
     };
 
     setFormData(newFormData);
@@ -165,17 +165,17 @@ export const useRegisterForm = () => {
 
   const isFormValid =
     validateUsername(formData.username) &&
-    (formData.walletType === "personal" ||
+    (formData.walletType === 'personal' ||
       validateWebsiteUri(formData.websiteUri)) &&
     selectedTokens.size > 0;
 
   const handleSubmit = async () => {
-    console.log("ready", ready);
-    console.log("authenticated", authenticated);
+    console.log('ready', ready);
+    console.log('authenticated', authenticated);
 
     if (!ready || !authenticated) return null;
 
-    console.log("Form submitted:", {
+    console.log('Form submitted:', {
       username: formData.username,
       websiteUri: formData.websiteUri,
       selectedTokens: Array.from(selectedTokens),
@@ -189,10 +189,10 @@ export const useRegisterForm = () => {
         message: message,
       });
 
-      console.log("signature", signature);
+      console.log('signature', signature);
 
       if (!signature) {
-        throw new Error("Failed to sign message");
+        throw new Error('Failed to sign message');
       }
 
       const keys = generateKeysFromSignature(signature);
@@ -205,11 +205,11 @@ export const useRegisterForm = () => {
 
       const privateKeyBuffer = Buffer.from(
         keys.spendingPrivateKey.slice(2),
-        "hex"
+        'hex'
       );
       const spendingPublicKey = `0x${Buffer.from(
         secp256k1.getPublicKey(privateKeyBuffer, false)
-      ).toString("hex")}`;
+      ).toString('hex')}`;
 
       const merchantKeys = {
         spendingPrivateKey: keys.spendingPrivateKey,
@@ -219,14 +219,14 @@ export const useRegisterForm = () => {
         userAddress: user?.wallet?.address,
       };
 
-      console.log("merchantKeys", merchantKeys);
+      console.log('merchantKeys', merchantKeys);
 
       const chains = [
         {
           chainId: WHITELISTED_NETWORKS[0].chainId,
           name: WHITELISTED_NETWORKS[0].name,
           tokenAddresses: WHITELISTED_NETWORKS[0].tokens.map(
-            (token) => token.address
+            token => token.address
           ),
         },
       ];
@@ -237,18 +237,18 @@ export const useRegisterForm = () => {
         eoaaddress: address,
         viewingPrivateKey: merchantKeys.viewingPrivateKey,
         spendingPublicKey: merchantKeys.spendingPublicKey,
-        isMerchant: formData.walletType === "merchant",
+        isMerchant: formData.walletType === 'merchant',
         chains: chains,
       };
 
-      console.log("registrationData", registrationData);
+      console.log('registrationData', registrationData);
 
       const { data } = await axios.post(
         `${BACKEND_URL}/api/user/register`,
         registrationData
       );
 
-      console.log("response", data);
+      console.log('response', data);
 
       // Store the registration result to show success message
       setRegistrationResult(data);
@@ -261,7 +261,7 @@ export const useRegisterForm = () => {
           apiKey: data.data.user.apiKey,
           isLive: false, // Start in test mode
         };
-        localStorage.setItem("merchantData", JSON.stringify(merchantData));
+        localStorage.setItem('merchantData', JSON.stringify(merchantData));
       }
 
       // Create user data for auth state using actual registration data
@@ -269,15 +269,15 @@ export const useRegisterForm = () => {
         username: formData.username,
         walletType: formData.walletType,
         websiteUri:
-          formData.walletType === "merchant" ? formData.websiteUri : undefined,
+          formData.walletType === 'merchant' ? formData.websiteUri : undefined,
         selectedTokens: Array.from(selectedTokens),
       };
 
       // Save auth state
-     await saveAuthState(userData);
+      await saveAuthState(userData);
 
       //2sec delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       await refetch();
       await refetchWithdrawals();
@@ -288,7 +288,7 @@ export const useRegisterForm = () => {
       // Return the user data so the parent component can handle the auth state update
       return userData;
     } catch (error) {
-      console.error("Registration failed:", error);
+      console.error('Registration failed:', error);
       setIsLoggingIn(false);
     }
   };

@@ -1,18 +1,17 @@
-import { createPublicClient, http } from "viem";
-import Safe from "@safe-global/protocol-kit";
-import { CHAIN_IDS, RPC_CONFIG } from "./constants";
-import { getContractNetworks } from "./safe-contracts";
+import { createPublicClient, http } from 'viem';
+import Safe from '@safe-global/protocol-kit';
+import { CHAIN_IDS, RPC_CONFIG } from './constants';
 
 // Create public client for reading blockchain data with retry configuration
 export const publicClient = createPublicClient({
   chain: {
-    id: CHAIN_IDS.SEI_TESTNET,
-    name: "Sei Testnet",
-    nativeCurrency: { name: "SEI", symbol: "SEI", decimals: 18 },
-    rpcUrls: { default: { http: [RPC_CONFIG.SEI_TESTNET.primary] } },
+    id: CHAIN_IDS.ARB_SEPOLIA,
+    name: 'Arbitrum Sepolia',
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+    rpcUrls: { default: { http: [RPC_CONFIG.ARB_SEPOLIA.primary] } },
     testnet: true,
   },
-  transport: http(RPC_CONFIG.SEI_TESTNET.primary, {
+  transport: http(RPC_CONFIG.ARB_SEPOLIA.primary, {
     retryCount: 3,
     retryDelay: 1000,
     timeout: 10000,
@@ -34,15 +33,15 @@ export const buildSafeTransaction = (txData: {
 }) => {
   return {
     to: txData.to,
-    value: txData.value || "0",
-    data: txData.data || "0x",
+    value: txData.value || '0',
+    data: txData.data || '0x',
     operation: txData.operation || 0,
-    safeTxGas: txData.safeTxGas || "0",
-    baseGas: txData.baseGas || "0",
-    gasPrice: txData.gasPrice || "0",
-    gasToken: txData.gasToken || "0x0000000000000000000000000000000000000000",
+    safeTxGas: txData.safeTxGas || '0',
+    baseGas: txData.baseGas || '0',
+    gasPrice: txData.gasPrice || '0',
+    gasToken: txData.gasToken || '0x0000000000000000000000000000000000000000',
     refundReceiver:
-      txData.refundReceiver || "0x0000000000000000000000000000000000000000",
+      txData.refundReceiver || '0x0000000000000000000000000000000000000000',
     nonce: txData.nonce || 0,
   };
 };
@@ -72,7 +71,7 @@ export const safeSignTypedData = async (
     refundReceiver: string;
     nonce: number;
   },
-  chainId: number = CHAIN_IDS.SEI_TESTNET
+  chainId: number = CHAIN_IDS.ARB_SEPOLIA
 ) => {
   const domain = {
     chainId: chainId,
@@ -81,16 +80,16 @@ export const safeSignTypedData = async (
 
   const types = {
     SafeTx: [
-      { type: "address", name: "to" },
-      { type: "uint256", name: "value" },
-      { type: "bytes", name: "data" },
-      { type: "uint8", name: "operation" },
-      { type: "uint256", name: "safeTxGas" },
-      { type: "uint256", name: "baseGas" },
-      { type: "uint256", name: "gasPrice" },
-      { type: "address", name: "gasToken" },
-      { type: "address", name: "refundReceiver" },
-      { type: "uint256", name: "nonce" },
+      { type: 'address', name: 'to' },
+      { type: 'uint256', name: 'value' },
+      { type: 'bytes', name: 'data' },
+      { type: 'uint8', name: 'operation' },
+      { type: 'uint256', name: 'safeTxGas' },
+      { type: 'uint256', name: 'baseGas' },
+      { type: 'uint256', name: 'gasPrice' },
+      { type: 'address', name: 'gasToken' },
+      { type: 'address', name: 'refundReceiver' },
+      { type: 'uint256', name: 'nonce' },
     ],
   };
 
@@ -111,7 +110,7 @@ export const safeSignTypedData = async (
     account,
     domain,
     types,
-    primaryType: "SafeTx",
+    primaryType: 'SafeTx',
     message,
   });
 };
@@ -123,12 +122,12 @@ export async function predictSafeAddress(
 ) {
   // Use centralized RPC configuration with QuickNode as primary
   const rpcEndpoints = rpcUrl
-    ? [rpcUrl, ...RPC_CONFIG.SEI_TESTNET.fallbacks]
-    : [RPC_CONFIG.SEI_TESTNET.primary, ...RPC_CONFIG.SEI_TESTNET.fallbacks];
+    ? [rpcUrl, ...RPC_CONFIG.ARB_SEPOLIA.fallbacks]
+    : [RPC_CONFIG.ARB_SEPOLIA.primary, ...RPC_CONFIG.ARB_SEPOLIA.fallbacks];
 
   try {
     console.log(
-      "🔍 Predicting Safe address using Protocol Kit for:",
+      '🔍 Predicting Safe address using Protocol Kit for:',
       stealthAddress
     );
 
@@ -139,17 +138,11 @@ export async function predictSafeAddress(
         threshold: 1,
       },
       safeDeploymentConfig: {
-        saltNonce: "0",
+        saltNonce: '0',
       },
     };
 
-    // Get custom contract networks configuration for Sei Testnet
-    const contractNetworks = getContractNetworks(CHAIN_IDS.SEI_TESTNET);
-
-    console.log(
-      "🔧 Using custom contract networks for Sei Testnet:",
-      contractNetworks
-    );
+    // For Base Sepolia we rely on RPC URI only; do not use contractNetworks
 
     // Try multiple RPC endpoints
     for (let i = 0; i < rpcEndpoints.length; i++) {
@@ -161,44 +154,17 @@ export async function predictSafeAddress(
       );
 
       try {
-        // Try with custom contract networks first
-        try {
-          const protocolKit = await Safe.init({
-            provider: currentRpcUrl,
-            predictedSafe,
-            contractNetworks,
-          });
+        const protocolKit = await Safe.init({
+          provider: currentRpcUrl,
+          predictedSafe,
+        });
 
-          const predictedAddress = await protocolKit.getAddress();
-          console.log(
-            `✅ Safe address predicted successfully with RPC ${i + 1}:`,
-            predictedAddress
-          );
-          return predictedAddress;
-        } catch (contractError) {
-          console.warn(
-            `⚠️ Failed with custom contract networks on RPC ${
-              i + 1
-            }, trying without:`,
-            contractError
-          );
-
-          // Fallback: Try without custom contract networks (let SDK use defaults)
-          const protocolKit = await Safe.init({
-            provider: currentRpcUrl,
-            predictedSafe,
-            // Don't pass contractNetworks - let SDK use its defaults
-          });
-
-          const predictedAddress = await protocolKit.getAddress();
-          console.log(
-            `✅ Safe address predicted successfully (fallback) with RPC ${
-              i + 1
-            }:`,
-            predictedAddress
-          );
-          return predictedAddress;
-        }
+        const predictedAddress = await protocolKit.getAddress();
+        console.log(
+          `✅ Safe address predicted successfully with RPC ${i + 1}:`,
+          predictedAddress
+        );
+        return predictedAddress;
       } catch (rpcError) {
         console.warn(`❌ RPC endpoint ${i + 1} failed:`, rpcError);
         if (i === rpcEndpoints.length - 1) {
@@ -210,24 +176,13 @@ export async function predictSafeAddress(
       }
     }
   } catch (error) {
-    console.error("❌ Error predicting safe address:", error);
+    console.error('❌ Error predicting safe address:', error);
 
     // Final fallback: Calculate Safe address manually if Protocol Kit fails
-    console.log("🔄 Attempting manual Safe address calculation...");
-    try {
-      // This is a simplified manual calculation - you might need to adjust based on your specific needs
-      const saltNonce =
-        "0x0000000000000000000000000000000000000000000000000000000000000000";
-      const factoryAddress = "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67";
-      const singletonAddress = "0x41675C099F32341bf84BFc5382aF534df5C7461a";
-
-      // Note: This is a simplified approach. The actual Safe address calculation is more complex
-      // and involves CREATE2 opcode simulation. For now, we'll throw the original error.
-      throw new Error(
-        `Safe address prediction failed. Please check RPC connectivity and contract addresses. Original error: ${error}`
-      );
-    } catch (manualError) {
-      throw error; // Throw the original error
-    }
+    console.log('🔄 Attempting manual Safe address calculation...');
+    // Final rethrow with helpful message; removing unused manual variables
+    throw new Error(
+      `Safe address prediction failed. Please check RPC connectivity and contract addresses. Original error: ${error}`
+    );
   }
 }

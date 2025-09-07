@@ -1,5 +1,5 @@
-import { Skeleton } from "./skeleton";
-import { User, Wallet } from "lucide-react";
+import { Skeleton } from './skeleton';
+import { User, Wallet } from 'lucide-react';
 
 // Username skeleton for navbar
 export const UsernameSkeleton = () => {
