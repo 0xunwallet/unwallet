@@ -10,7 +10,7 @@ graph TB
         A[Client App - Next.js]
         B[Landing Page]
         C[Example UI]
-        D[CCTP Sei App]
+        D[CCTP Arbitrum App]
     end
     
     subgraph "Agent Layer"
@@ -24,7 +24,7 @@ graph TB
     end
     
     subgraph "Blockchain Layer"
-        I[Sei Testnet]
+        I[Arbitrum Sepolia Testnet]
         J[Safe Contracts]
         K[Stealth Addresses]
         L[Multicall3]
@@ -100,15 +100,6 @@ graph TB
 #### `example-ui/` - Demo Applications
 - **Purpose**: Example implementations and demos
 - **Features**: Integration examples, testing interfaces
-
-#### `cctp-sei/` - Cross-Chain Transfer Protocol
-- **Technology**: Next.js, Circle CCTP integration
-- **Purpose**: Cross-chain USDC transfers
-- **Features**:
-  - Chain selection interface
-  - Transfer progress tracking
-  - Real-time status updates
-  - Transaction history
 
 ### 🤖 Agent Applications
 
@@ -242,7 +233,7 @@ sequenceDiagram
 ### 🏗️ System Components
 
 #### **Blockchain Integration**
-- **Network**: Sei Testnet
+- **Network**: Arbitrum Sepolia Testnet
 - **Token**: USDC (0x4fCF1784B31630811181f670Aea7A7bEF803eaED)
 - **Contracts**: Safe Protocol Kit
 - **Optimization**: Multicall3 for batch operations
@@ -314,50 +305,6 @@ vercel
 - `ADDRESS` - Payment address
 - `AGENT_QUERY_URL` - Backend API URL
 
-### **Local Development**
-
-#### **Start All Services:**
-```bash
-# Terminal 1 - Backend Server
-cd server-unwallet
-npm run dev
-
-# Terminal 2 - Agent1
-cd agent1
-npm run dev
-
-# Terminal 3 - Agent2
-cd agent2
-npm run dev
-
-# Terminal 4 - Client App
-cd client-app
-npm run dev
-
-# Terminal 5 - CCTP App
-cd cctp-sei
-npm run dev
-```
-
-## 📊 API Endpoints
-
-### **Agent1 Endpoints**
-- `GET /health` - Health check (free)
-- `GET /weather` - Weather data (paid: $0.01 USDC)
-- `GET /chat?question=text` - Free chat with Gemini AI
-- `GET /chat/pro?question=text` - Multi-agent response (paid: $0.01 USDC)
-
-### **Agent2 Endpoints**
-- `GET /health` - Health check (free)
-- `GET /weather` - Weather data (paid: $0.01 USDC)
-- `GET /chat?question=text` - Free chat with Gemini AI
-- `GET /chat/pro?question=text` - Pro chat with Gemini AI (paid: $0.001 USDC)
-
-### **Backend Server Endpoints**
-- `GET /api/user/:username/funding-stats` - User funding statistics
-- `POST /api/user/:username/stealth` - Generate stealth addresses
-- `GET /api/health` - Server health check
-
 ## 🔍 Key Technologies
 
 ### **Frontend**
@@ -376,7 +323,7 @@ npm run dev
 - **Viem** - Blockchain interactions
 
 ### **Blockchain**
-- **Sei Testnet** - Blockchain network
+- **Arbitrum Sepolia Testnet** - Blockchain network
 - **Safe Protocol Kit** - Multi-signature wallets
 - **Stealth Account Kit** - Privacy addresses
 - **Multicall3** - Batch operations
