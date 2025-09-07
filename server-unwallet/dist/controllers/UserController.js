@@ -364,7 +364,13 @@ class UserController {
                 const preflightArgsFor = (data) => [
                     data.map((c) => ({ target: c.target, allowFailure: true, callData: c.callData }))
                 ];
-                const chainObjFor = (id) => id === chains_1.CHAIN_IDS.BASE_SEPOLIA ? chains_1.BASE_SEPOLIA : chains_1.SEI_TESTNET;
+                const chainObjFor = (id) => {
+                    if (id === chains_1.CHAIN_IDS.BASE_SEPOLIA)
+                        return chains_1.BASE_SEPOLIA;
+                    if (id === chains_1.CHAIN_IDS.ARBITRUM_SEPOLIA)
+                        return chains_1.ARBITRUM_SEPOLIA;
+                    return chains_1.SEI_TESTNET;
+                };
                 const failuresByChain = {};
                 for (const cid of candidateChainIds) {
                     if (!chains_1.SUPPORTED_CHAINS.includes(cid))
@@ -459,7 +465,9 @@ class UserController {
                         chainName: selectedChain.name,
                         explorerUrl: selectedChainId === chains_1.CHAIN_IDS.BASE_SEPOLIA
                             ? `https://sepolia.basescan.org/tx/${txHash}`
-                            : `https://seitrace.com/?chain=atlantic-2&tx=${txHash}`,
+                            : selectedChainId === chains_1.CHAIN_IDS.ARBITRUM_SEPOLIA
+                                ? `https://sepolia.arbiscan.io/tx/${txHash}`
+                                : `https://seitrace.com/?chain=atlantic-2&tx=${txHash}`,
                         multicallCallsExecuted: multicallData.length,
                         status: receipt.status === 'success' ? 'success' : 'failed'
                     }

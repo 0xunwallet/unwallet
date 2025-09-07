@@ -5,7 +5,7 @@ import { StealthAddressService } from '../services/StealthAddressService';
 import { SafeService } from '../services/SafeService';
 import { UserRegistrationRequest, UserRegistrationResponse, AuthenticatedRequest, SafeAddressInfo } from '../types';
 import { ResponseUtil, Logger } from '../utils';
-import { CHAIN_IDS, RPC_URLS, DEFAULT_CHAIN_ID, DEFAULT_RPC_URL, SEI_TESTNET, BASE_SEPOLIA, SUPPORTED_CHAINS } from '../config/chains';
+import { CHAIN_IDS, RPC_URLS, DEFAULT_CHAIN_ID, DEFAULT_RPC_URL, SEI_TESTNET, BASE_SEPOLIA, ARBITRUM_SEPOLIA, SUPPORTED_CHAINS } from '../config/chains';
 
 export class UserController {
   private userService: UserService;
@@ -428,7 +428,11 @@ export class UserController {
         data.map((c: any) => ({ target: c.target, allowFailure: true, callData: c.callData }))
       ];
 
-      const chainObjFor = (id: number) => id === CHAIN_IDS.BASE_SEPOLIA ? BASE_SEPOLIA : SEI_TESTNET;
+      const chainObjFor = (id: number) => {
+        if (id === CHAIN_IDS.BASE_SEPOLIA) return BASE_SEPOLIA;
+        if (id === CHAIN_IDS.ARBITRUM_SEPOLIA) return ARBITRUM_SEPOLIA;
+        return SEI_TESTNET;
+      };
 
       const failuresByChain: Record<number, { index: number; target: string }[]> = {};
 
@@ -535,6 +539,8 @@ export class UserController {
           chainName: selectedChain.name,
           explorerUrl: selectedChainId === CHAIN_IDS.BASE_SEPOLIA
             ? `https://sepolia.basescan.org/tx/${txHash}`
+            : selectedChainId === CHAIN_IDS.ARBITRUM_SEPOLIA
+            ? `https://sepolia.arbiscan.io/tx/${txHash}`
             : `https://seitrace.com/?chain=atlantic-2&tx=${txHash}`,
           multicallCallsExecuted: multicallData.length,
           status: receipt.status === 'success' ? 'success' : 'failed'
