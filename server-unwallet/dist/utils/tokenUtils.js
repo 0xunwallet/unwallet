@@ -50,6 +50,16 @@ function initializeClients() {
         chain: chains_1.SEI_TESTNET,
         transport: (0, viem_1.http)('https://evm-rpc-testnet.sei-apis.com'),
     }));
+    // Base Sepolia
+    publicClients.set(chains_1.CHAIN_IDS.BASE_SEPOLIA, (0, viem_1.createPublicClient)({
+        chain: chains_1.BASE_SEPOLIA,
+        transport: (0, viem_1.http)('https://sepolia.base.org'),
+    }));
+    // Arbitrum Sepolia
+    publicClients.set(chains_1.CHAIN_IDS.ARBITRUM_SEPOLIA, (0, viem_1.createPublicClient)({
+        chain: chains_1.ARBITRUM_SEPOLIA,
+        transport: (0, viem_1.http)('https://sepolia-rollup.arbitrum.io/rpc'),
+    }));
     logger_1.Logger.info('TokenUtils initialized with blockchain clients', {
         supportedChains: Array.from(publicClients.keys())
     });
@@ -108,7 +118,9 @@ async function getTokenSymbol(tokenAddress, chainId) {
         if (tokenAddress === '0x0000000000000000000000000000000000000000') {
             switch (chainId) {
                 case chains_1.CHAIN_IDS.SEI_TESTNET: return 'SEI';
-                default: return 'SEI';
+                case chains_1.CHAIN_IDS.BASE_SEPOLIA: return 'ETH';
+                case chains_1.CHAIN_IDS.ARBITRUM_SEPOLIA: return 'ETH';
+                default: return 'ETH';
             }
         }
         const symbol = await publicClient.readContract({
@@ -140,7 +152,9 @@ async function getTokenName(tokenAddress, chainId) {
         if (tokenAddress === '0x0000000000000000000000000000000000000000') {
             switch (chainId) {
                 case chains_1.CHAIN_IDS.SEI_TESTNET: return 'SEI';
-                default: return 'SEI';
+                case chains_1.CHAIN_IDS.BASE_SEPOLIA: return 'Ether';
+                case chains_1.CHAIN_IDS.ARBITRUM_SEPOLIA: return 'Ether';
+                default: return 'Ether';
             }
         }
         const name = await publicClient.readContract({
@@ -189,6 +203,10 @@ function getRpcUrlForChain(chainId) {
     switch (chainId) {
         case chains_1.CHAIN_IDS.SEI_TESTNET:
             return 'https://evm-rpc-testnet.sei-apis.com';
+        case chains_1.CHAIN_IDS.BASE_SEPOLIA:
+            return 'https://sepolia.base.org';
+        case chains_1.CHAIN_IDS.ARBITRUM_SEPOLIA:
+            return 'https://sepolia-rollup.arbitrum.io/rpc';
         default:
             throw new Error(`Unsupported chain ID: ${chainId}`);
     }
@@ -200,8 +218,12 @@ function getNativeCurrencySymbol(chainId) {
     switch (chainId) {
         case chains_1.CHAIN_IDS.SEI_TESTNET:
             return 'SEI';
+        case chains_1.CHAIN_IDS.BASE_SEPOLIA:
+            return 'ETH';
+        case chains_1.CHAIN_IDS.ARBITRUM_SEPOLIA:
+            return 'ETH';
         default:
-            return 'SEI';
+            return 'ETH';
     }
 }
 exports.default = {

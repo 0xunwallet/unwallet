@@ -4,6 +4,7 @@ import { defineChain } from "viem";
 export const CHAIN_IDS = {
   SEI_TESTNET: 1328,
   BASE_SEPOLIA: 84532,
+  ARBITRUM_SEPOLIA: 421614,
 } as const;
 
 export const DEFAULT_RPC_URL = "https://quiet-crimson-ensemble.sei-atlantic.quiknode.pro/69718db72dcf9d1828053e82dbeeeb283319782e";
@@ -63,26 +64,56 @@ export const BASE_SEPOLIA = defineChain({
   testnet: true,
 });
 
+// Define Arbitrum Sepolia chain
+export const ARBITRUM_SEPOLIA = defineChain({
+  id: CHAIN_IDS.ARBITRUM_SEPOLIA,
+  name: 'Arbitrum Sepolia',
+  network: 'arbitrum-sepolia',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ether',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://sepolia-rollup.arbitrum.io/rpc'],
+    },
+    public: {
+      http: ['https://sepolia-rollup.arbitrum.io/rpc'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Arbiscan',
+      url: 'https://sepolia.arbiscan.io',
+    },
+  },
+  testnet: true,
+});
+
 // Default chain configuration
 export const DEFAULT_CHAIN = SEI_TESTNET;
 export const DEFAULT_CHAIN_ID = DEFAULT_CHAIN.id;
-// Supported chains array - Sei Testnet + Base Sepolia
-export const SUPPORTED_CHAINS = [CHAIN_IDS.SEI_TESTNET, CHAIN_IDS.BASE_SEPOLIA];
+// Supported chains array - Sei Testnet + Base Sepolia + Arbitrum Sepolia
+export const SUPPORTED_CHAINS = [CHAIN_IDS.SEI_TESTNET, CHAIN_IDS.BASE_SEPOLIA, CHAIN_IDS.ARBITRUM_SEPOLIA];
 
 // Chain name mapping - Sei Testnet
 export const CHAIN_NAMES: Record<number, string> = {
   [CHAIN_IDS.SEI_TESTNET]: 'Sei Testnet',
   [CHAIN_IDS.BASE_SEPOLIA]: 'Base Sepolia',
+  [CHAIN_IDS.ARBITRUM_SEPOLIA]: 'Arbitrum Sepolia',
 };
 
 // RPC URL mapping - Sei Testnet
 export const RPC_URLS: Record<number, string> = {
   [CHAIN_IDS.SEI_TESTNET]: DEFAULT_RPC_URL,
   [CHAIN_IDS.BASE_SEPOLIA]: 'https://sepolia.base.org',
+  [CHAIN_IDS.ARBITRUM_SEPOLIA]: 'https://sepolia-rollup.arbitrum.io/rpc',
 };
 
 // Native currency mapping - Sei Testnet
 export const NATIVE_CURRENCIES: Record<number, { name: string; symbol: string; decimals: number }> = {
   [CHAIN_IDS.SEI_TESTNET]: { name: 'SEI', symbol: 'SEI', decimals: 18 },
   [CHAIN_IDS.BASE_SEPOLIA]: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+  [CHAIN_IDS.ARBITRUM_SEPOLIA]: { name: 'Ether', symbol: 'ETH', decimals: 18 },
 };

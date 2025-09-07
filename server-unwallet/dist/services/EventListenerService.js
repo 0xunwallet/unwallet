@@ -30,6 +30,16 @@ class EventListenerService extends events_1.EventEmitter {
             chain: chains_1.SEI_TESTNET,
             transport: (0, viem_1.http)('https://evm-rpc-testnet.sei-apis.com'),
         }));
+        // Base Sepolia
+        this.publicClients.set(chains_1.CHAIN_IDS.BASE_SEPOLIA, (0, viem_1.createPublicClient)({
+            chain: chains_1.BASE_SEPOLIA,
+            transport: (0, viem_1.http)('https://sepolia.base.org'),
+        }));
+        // Arbitrum Sepolia
+        this.publicClients.set(chains_1.CHAIN_IDS.ARBITRUM_SEPOLIA, (0, viem_1.createPublicClient)({
+            chain: chains_1.ARBITRUM_SEPOLIA,
+            transport: (0, viem_1.http)('https://sepolia-rollup.arbitrum.io/rpc'),
+        }));
         utils_1.Logger.info('EventListenerService initialized with blockchain clients', {
             supportedChains: Array.from(this.publicClients.keys())
         });

@@ -18,6 +18,7 @@ app.set('trust proxy', 1);
 // Global middleware - Allow all origins (no CORS restrictions)
 app.use((0, cors_1.default)({
     origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true
 }));
 app.use(express_1.default.json({ limit: '10mb' }));

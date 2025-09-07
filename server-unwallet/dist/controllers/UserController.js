@@ -291,7 +291,7 @@ class UserController {
         this.gasSponsorshipRequest = async (req, res, next) => {
             try {
                 const { username } = req.params;
-                const { multicallData, metadata = {} } = req.body;
+                const { multicallData, metadata = {}, chainId: requestedChainId } = req.body;
                 utils_1.Logger.info('Gas sponsorship request received', {
                     username,
                     multicallDataLength: multicallData?.length || 0,
@@ -308,8 +308,6 @@ class UserController {
                 // Import required dependencies
                 const { createWalletClient, createPublicClient, http, encodeFunctionData } = require('viem');
                 const { privateKeyToAccount } = require('viem/accounts');
-                // Import the chain configuration
-                const { SEI_TESTNET } = require('../config/chains');
                 // Your sponsor private key (make sure this is in your .env file)
                 const SPONSOR_PRIVATE_KEY = process.env.SPONSOR_PRIVATE_KEY;
                 if (!SPONSOR_PRIVATE_KEY) {
@@ -324,26 +322,9 @@ class UserController {
                     keyLength: SPONSOR_PRIVATE_KEY.length,
                     startsWithOx: SPONSOR_PRIVATE_KEY.startsWith('0x')
                 });
-                // RPC URL for Morph Holesky
-                const RPC_URL = "https://rpc-holesky.morphl2.io";
-                // Create sponsor account and clients
+                // Create sponsor account
                 const sponsorAccount = privateKeyToAccount(formattedPrivateKey);
-                const sponsorWallet = createWalletClient({
-                    account: sponsorAccount,
-                    chain: SEI_TESTNET,
-                    transport: http(this.getRpcUrlForChain(SEI_TESTNET.id)),
-                });
-                const publicClient = createPublicClient({
-                    chain: SEI_TESTNET,
-                    transport: http(this.getRpcUrlForChain(SEI_TESTNET.id)),
-                });
-                utils_1.Logger.info('Executing gas sponsored transaction with multicall', {
-                    username,
-                    sponsorAddress: sponsorAccount.address,
-                    multicallCallsCount: multicallData.length,
-                    metadata: metadata.operationType || 'unknown'
-                });
-                // Multicall3 contract details
+                // Multicall3 contract details (declared before any usage)
                 const MULTICALL3_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
                 const MULTICALL3_ABI = [
                     {
@@ -373,6 +354,65 @@ class UserController {
                         type: 'function',
                     },
                 ];
+                // Auto-select chain if not provided: try preflight on all supported chains and pick the first that passes
+                const candidateChainIds = typeof requestedChainId === 'number' ? [requestedChainId] : chains_1.SUPPORTED_CHAINS;
+                let selectedChainId = null;
+                let selectedChain = null;
+                let selectedRpcUrl = '';
+                let publicClient = null;
+                let sponsorWallet = null;
+                const preflightArgsFor = (data) => [
+                    data.map((c) => ({ target: c.target, allowFailure: true, callData: c.callData }))
+                ];
+                const chainObjFor = (id) => id === chains_1.CHAIN_IDS.BASE_SEPOLIA ? chains_1.BASE_SEPOLIA : chains_1.SEI_TESTNET;
+                const failuresByChain = {};
+                for (const cid of candidateChainIds) {
+                    if (!chains_1.SUPPORTED_CHAINS.includes(cid))
+                        continue;
+                    const chainObj = chainObjFor(cid);
+                    const rpcUrl = this.getRpcUrlForChain(cid);
+                    const tmpPublic = createPublicClient({ chain: chainObj, transport: http(rpcUrl) });
+                    try {
+                        const sim = await tmpPublic.simulateContract({
+                            address: MULTICALL3_ADDRESS,
+                            abi: MULTICALL3_ABI,
+                            functionName: 'aggregate3',
+                            args: preflightArgsFor(multicallData),
+                            account: sponsorAccount.address,
+                        });
+                        const results = sim.result || [];
+                        const failed = results
+                            .map((r, i) => ({ index: i, success: r.success, target: multicallData[i]?.target }))
+                            .filter((r) => !r.success)
+                            .map((r) => ({ index: r.index, target: r.target }));
+                        failuresByChain[cid] = failed;
+                        if (failed.length === 0 && selectedChainId === null) {
+                            selectedChainId = cid;
+                            selectedChain = chainObj;
+                            selectedRpcUrl = rpcUrl;
+                            publicClient = tmpPublic;
+                        }
+                    }
+                    catch (e) {
+                        failuresByChain[cid] = [{ index: -1, target: 'simulate_failed' }];
+                    }
+                }
+                if (selectedChainId === null) {
+                    utils_1.Logger.error('Multicall preflight failed for all candidate chains', { failuresByChain });
+                    utils_1.ResponseUtil.error(res, `All candidate chains would fail: ${JSON.stringify(failuresByChain)}`, 400);
+                    return;
+                }
+                // Initialize sponsor wallet on the selected chain (publicClient already created)
+                sponsorWallet = createWalletClient({ account: sponsorAccount, chain: selectedChain, transport: http(selectedRpcUrl) });
+                utils_1.Logger.info('Executing gas sponsored transaction with multicall', {
+                    username,
+                    sponsorAddress: sponsorAccount.address,
+                    multicallCallsCount: multicallData.length,
+                    metadata: metadata.operationType || 'unknown'
+                });
+                // Multicall3 contract details
+                // Preflight: simulate with allowFailure=true to surface inner-call errors cross-chain
+                // Note: preflight already performed during auto-selection
                 // Execute the multicall transaction
                 const txHash = await sponsorWallet.writeContract({
                     address: MULTICALL3_ADDRESS,
@@ -415,9 +455,11 @@ class UserController {
                     sponsorAddress: sponsorAccount.address,
                     message: 'Gas sponsorship executed successfully',
                     executionDetails: {
-                        chainId: SEI_TESTNET.id,
-                        chainName: SEI_TESTNET.name,
-                        explorerUrl: `https://seitrace.com/?chain=atlantic-2&tx=${txHash}`,
+                        chainId: selectedChain.id,
+                        chainName: selectedChain.name,
+                        explorerUrl: selectedChainId === chains_1.CHAIN_IDS.BASE_SEPOLIA
+                            ? `https://sepolia.basescan.org/tx/${txHash}`
+                            : `https://seitrace.com/?chain=atlantic-2&tx=${txHash}`,
                         multicallCallsExecuted: multicallData.length,
                         status: receipt.status === 'success' ? 'success' : 'failed'
                     }
@@ -469,10 +511,7 @@ class UserController {
     }
     // Get RPC URL for a specific chain ID
     getRpcUrlForChain(chainId) {
-        const rpcUrls = {
-            [chains_1.CHAIN_IDS.SEI_TESTNET]: 'https://evm-rpc-testnet.sei-apis.com', // Sei Testnet
-        };
-        return rpcUrls[chainId] || 'https://evm-rpc-testnet.sei-apis.com'; // Default to Sei Testnet
+        return chains_1.RPC_URLS[chainId] ?? chains_1.RPC_URLS[chains_1.DEFAULT_CHAIN_ID] ?? chains_1.DEFAULT_RPC_URL;
     }
     // Helper function to convert BigInt values to strings for JSON serialization
     serializeBigInt(obj) {

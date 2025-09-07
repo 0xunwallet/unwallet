@@ -1,7 +1,7 @@
 import { createPublicClient, http, parseUnits, formatUnits, isAddress } from 'viem';
 import { EventEmitter } from 'events';
 import { Logger } from '../utils';
-import { SEI_TESTNET, BASE_SEPOLIA, CHAIN_IDS } from '../config/chains';
+import { SEI_TESTNET, BASE_SEPOLIA, ARBITRUM_SEPOLIA, CHAIN_IDS } from '../config/chains';
 
 // ERC20 Decimals ABI for reading token decimals
 const ERC20_DECIMALS_ABI = [
@@ -68,6 +68,12 @@ export class EventListenerService extends EventEmitter {
     this.publicClients.set(CHAIN_IDS.BASE_SEPOLIA, createPublicClient({
       chain: BASE_SEPOLIA,
       transport: http('https://sepolia.base.org'),
+    }));
+
+    // Arbitrum Sepolia
+    this.publicClients.set(CHAIN_IDS.ARBITRUM_SEPOLIA, createPublicClient({
+      chain: ARBITRUM_SEPOLIA,
+      transport: http('https://sepolia-rollup.arbitrum.io/rpc'),
     }));
 
     Logger.info('EventListenerService initialized with blockchain clients', {

@@ -1,6 +1,6 @@
 import { createPublicClient, http } from 'viem';
 import { Logger } from './logger';
-import { SEI_TESTNET, BASE_SEPOLIA, CHAIN_IDS } from '../config/chains';
+import { SEI_TESTNET, BASE_SEPOLIA, ARBITRUM_SEPOLIA, CHAIN_IDS } from '../config/chains';
 
 // ERC20 Decimals ABI for reading token decimals
 const ERC20_DECIMALS_ABI = [
@@ -52,6 +52,12 @@ function initializeClients() {
   publicClients.set(CHAIN_IDS.BASE_SEPOLIA, createPublicClient({
     chain: BASE_SEPOLIA,
     transport: http('https://sepolia.base.org'),
+  }));
+
+  // Arbitrum Sepolia
+  publicClients.set(CHAIN_IDS.ARBITRUM_SEPOLIA, createPublicClient({
+    chain: ARBITRUM_SEPOLIA,
+    transport: http('https://sepolia-rollup.arbitrum.io/rpc'),
   }));
 
   Logger.info('TokenUtils initialized with blockchain clients', {
@@ -129,6 +135,7 @@ export async function getTokenSymbol(tokenAddress: string, chainId: number): Pro
       switch (chainId) {
         case CHAIN_IDS.SEI_TESTNET: return 'SEI';
         case CHAIN_IDS.BASE_SEPOLIA: return 'ETH';
+        case CHAIN_IDS.ARBITRUM_SEPOLIA: return 'ETH';
         default: return 'ETH';
       }
     }
@@ -165,6 +172,7 @@ export async function getTokenName(tokenAddress: string, chainId: number): Promi
       switch (chainId) {
         case CHAIN_IDS.SEI_TESTNET: return 'SEI';
         case CHAIN_IDS.BASE_SEPOLIA: return 'Ether';
+        case CHAIN_IDS.ARBITRUM_SEPOLIA: return 'Ether';
         default: return 'Ether';
       }
     }
@@ -221,6 +229,8 @@ export function getRpcUrlForChain(chainId: number): string {
       return 'https://evm-rpc-testnet.sei-apis.com';
     case CHAIN_IDS.BASE_SEPOLIA:
       return 'https://sepolia.base.org';
+    case CHAIN_IDS.ARBITRUM_SEPOLIA:
+      return 'https://sepolia-rollup.arbitrum.io/rpc';
     default:
       throw new Error(`Unsupported chain ID: ${chainId}`);
   }
@@ -234,6 +244,8 @@ export function getNativeCurrencySymbol(chainId: number): string {
     case CHAIN_IDS.SEI_TESTNET:
       return 'SEI';
     case CHAIN_IDS.BASE_SEPOLIA:
+      return 'ETH';
+    case CHAIN_IDS.ARBITRUM_SEPOLIA:
       return 'ETH';
     default:
       return 'ETH';

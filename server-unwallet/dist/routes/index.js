@@ -152,13 +152,15 @@ router.get('/', (req, res) => {
             }
         },
         supportedChains: {
-            [chains_1.CHAIN_IDS.SEI_TESTNET]: 'Sei Testnet'
+            [chains_1.CHAIN_IDS.SEI_TESTNET]: 'Sei Testnet',
+            [chains_1.CHAIN_IDS.BASE_SEPOLIA]: 'Base Sepolia',
+            [chains_1.CHAIN_IDS.ARBITRUM_SEPOLIA]: 'Arbitrum Sepolia'
         },
         safeAddressPrediction: {
             description: 'Automatic Safe wallet address prediction for enhanced security',
             functionality: {
                 prediction: 'Predicts Safe wallet addresses based on stealth addresses using Safe Protocol Kit',
-                chainSupport: `Supports Sei Testnet (chainId: ${chains_1.CHAIN_IDS.SEI_TESTNET}) by default`,
+                chainSupport: `Supports Sei Testnet (chainId: ${chains_1.CHAIN_IDS.SEI_TESTNET}), Base Sepolia (chainId: ${chains_1.CHAIN_IDS.BASE_SEPOLIA}), and Arbitrum Sepolia (chainId: ${chains_1.CHAIN_IDS.ARBITRUM_SEPOLIA})`,
                 deploymentCheck: 'Verifies if predicted Safe addresses are already deployed',
                 errorHandling: 'Gracefully handles prediction failures without affecting stealth generation'
             },

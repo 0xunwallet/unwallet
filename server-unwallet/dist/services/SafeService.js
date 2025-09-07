@@ -27,7 +27,7 @@ const ERC20_BALANCE_ABI = [
     }
 ];
 class SafeService {
-    constructor(chainId = chains_1.CHAIN_IDS.SEI_TESTNET, rpcUrl = 'https://evm-rpc-testnet.sei-apis.com') {
+    constructor(chainId = chains_1.CHAIN_IDS.SEI_TESTNET, rpcUrl = chains_1.DEFAULT_RPC_URL) {
         this.chainId = chainId;
         this.rpcUrl = rpcUrl;
     }
@@ -355,14 +355,18 @@ class SafeService {
     // Helper method to get human-readable chain name
     getChainName() {
         const chainNames = {
-            [chains_1.CHAIN_IDS.SEI_TESTNET]: 'Sei Testnet'
+            [chains_1.CHAIN_IDS.SEI_TESTNET]: 'Sei Testnet',
+            [chains_1.CHAIN_IDS.BASE_SEPOLIA]: 'Base Sepolia',
+            [chains_1.CHAIN_IDS.ARBITRUM_SEPOLIA]: 'Arbitrum Sepolia'
         };
         return chainNames[this.chainId] || `Chain ${this.chainId}`;
     }
     // Get supported networks (informational)
     static getSupportedNetworks() {
         return [
-            { chainId: chains_1.CHAIN_IDS.SEI_TESTNET, name: 'Sei Testnet', rpcUrl: 'https://evm-rpc-testnet.sei-apis.com' }
+            { chainId: chains_1.CHAIN_IDS.SEI_TESTNET, name: 'Sei Testnet', rpcUrl: 'https://evm-rpc-testnet.sei-apis.com' },
+            { chainId: chains_1.CHAIN_IDS.BASE_SEPOLIA, name: 'Base Sepolia', rpcUrl: 'https://sepolia.base.org' },
+            { chainId: chains_1.CHAIN_IDS.ARBITRUM_SEPOLIA, name: 'Arbitrum Sepolia', rpcUrl: 'https://sepolia-rollup.arbitrum.io/rpc' }
         ];
     }
     // Check if Safe address has any token balance (native or ERC20)
@@ -382,7 +386,8 @@ class SafeService {
             }
             // Create public client for blockchain interactions
             const publicClient = (0, viem_1.createPublicClient)({
-                chain: chains_1.SEI_TESTNET, // Currently only supporting Sei Testnet
+                chain: this.chainId === chains_1.CHAIN_IDS.BASE_SEPOLIA ? chains_1.BASE_SEPOLIA :
+                    this.chainId === chains_1.CHAIN_IDS.ARBITRUM_SEPOLIA ? chains_1.ARBITRUM_SEPOLIA : chains_1.SEI_TESTNET,
                 transport: (0, viem_1.http)(this.rpcUrl)
             });
             const isNativeToken = tokenAddress === '0x0000000000000000000000000000000000000000';
@@ -462,7 +467,8 @@ class SafeService {
             }
             // Create public client for blockchain interactions
             const publicClient = (0, viem_1.createPublicClient)({
-                chain: chains_1.SEI_TESTNET, // Currently only supporting Sei Testnet
+                chain: this.chainId === chains_1.CHAIN_IDS.BASE_SEPOLIA ? chains_1.BASE_SEPOLIA :
+                    this.chainId === chains_1.CHAIN_IDS.ARBITRUM_SEPOLIA ? chains_1.ARBITRUM_SEPOLIA : chains_1.SEI_TESTNET,
                 transport: (0, viem_1.http)(this.rpcUrl)
             });
             const isNativeToken = tokenAddress === '0x0000000000000000000000000000000000000000';
