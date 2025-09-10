@@ -10,7 +10,7 @@ graph TB
         A[Client App - Next.js]
         B[Landing Page]
         C[Example UI]
-        D[CCTP Arbitrum App]
+        D[CCTP Sei App]
     end
     
     subgraph "Agent Layer"
@@ -24,7 +24,7 @@ graph TB
     end
     
     subgraph "Blockchain Layer"
-        I[Arbitrum Sepolia Testnet]
+        I[Sei Testnet]
         J[Safe Contracts]
         K[Stealth Addresses]
         L[Multicall3]
@@ -233,7 +233,7 @@ sequenceDiagram
 ### 🏗️ System Components
 
 #### **Blockchain Integration**
-- **Network**: Arbitrum Sepolia Testnet
+- **Network**: Sei Testnet
 - **Token**: USDC (0x4fCF1784B31630811181f670Aea7A7bEF803eaED)
 - **Contracts**: Safe Protocol Kit
 - **Optimization**: Multicall3 for batch operations
@@ -323,7 +323,7 @@ vercel
 - **Viem** - Blockchain interactions
 
 ### **Blockchain**
-- **Arbitrum Sepolia Testnet** - Blockchain network
+- **Sei Testnet** - Blockchain network
 - **Safe Protocol Kit** - Multi-signature wallets
 - **Stealth Account Kit** - Privacy addresses
 - **Multicall3** - Batch operations
